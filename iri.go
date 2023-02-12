@@ -16,13 +16,15 @@ import (
 // [RFC3987].
 //
 // See https://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#dfn-iri.
-type IRI string
+type IRI struct {
+	value string
+}
 
 // Parse parses a string into an IRI and checks that it conforms to RFC 3987.
 func Parse(s string) (IRI, error) {
 	match := uriRE.FindStringSubmatch(s)
 	if len(match) == 0 {
-		return "", fmt.Errorf("%q is not a valid IRI - does not match regexp %s", s, uriRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI - does not match regexp %s", s, uriRE)
 	}
 	scheme := match[uriRESchemeGroup]
 	auth := match[uriREAuthorityGroup]
@@ -30,24 +32,24 @@ func Parse(s string) (IRI, error) {
 	query := match[uriREQueryGroup]
 	fragment := match[uriREFragmentGroup]
 	if scheme != "" && !schemeRE.MatchString(scheme) {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid scheme %q does not match regexp %s", s, scheme, schemeRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid scheme %q does not match regexp %s", s, scheme, schemeRE)
 	}
 	if auth != "" && !iauthorityRE.MatchString(auth) {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid auth %q does not match regexp %s", s, auth, iauthorityRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid auth %q does not match regexp %s", s, auth, iauthorityRE)
 	}
 	if path != "" && !ipathRE.MatchString(path) {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid path %q does not match regexp %s", s, path, ipathRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid path %q does not match regexp %s", s, path, ipathRE)
 	}
 	if query != "" && !iqueryRE.MatchString(query) {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid query %q does not match regexp %s", s, query, iqueryRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid query %q does not match regexp %s", s, query, iqueryRE)
 	}
 	if fragment != "" && !ifragmentRE.MatchString(fragment) {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid fragment %q does not match regexp %s", s, fragment, ifragmentRE)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid fragment %q does not match regexp %s", s, fragment, ifragmentRE)
 	}
-	parsed := IRI(s)
+	parsed := IRI{value: s}
 
 	if _, err := parsed.normalizePercentEncoding(); err != nil {
-		return "", fmt.Errorf("%q is not a valid IRI: invalid percent encoding: %w", s, err)
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid percent encoding: %w", s, err)
 	}
 
 	return parsed, nil
@@ -55,13 +57,13 @@ func Parse(s string) (IRI, error) {
 
 // Check returns an error if the IRI is invalid.
 func (iri IRI) Check() error {
-	_, err := Parse(string(iri))
+	_, err := Parse(iri.String())
 	return err
 }
 
-// String returns the N-Tuples-formatted IRI: "<" + iri + ">".
+// String reassembles the IRI into a valid IRI string.
 func (iri IRI) String() string {
-	return fmt.Sprintf("<%s>", string(iri))
+	return iri.value
 }
 
 // ResolveReference resolves an IRI reference to an absolute IRI from an absolute
@@ -73,7 +75,7 @@ func (iri IRI) ResolveReference(other IRI) IRI {
 
 // parts returns the components of the URI or nil if there is a parsing error.
 func (iri IRI) parts() *parts {
-	match := uriRE.FindStringSubmatch(string(iri))
+	match := uriRE.FindStringSubmatch(iri.value)
 	if len(match) == 0 {
 		return nil
 	}
@@ -139,7 +141,7 @@ func (p *parts) toIRI() IRI {
 	} else if p.emptyFragment {
 		s += "#"
 	}
-	return IRI(s)
+	return IRI{value: s}
 }
 
 // Normalization background reading:
@@ -313,7 +315,7 @@ func (iri IRI) NormalizePercentEncoding() IRI {
 func (iri IRI) normalizePercentEncoding() (IRI, error) {
 	var errs []error
 	// Find consecutive percent-encoded octets and encode them together.
-	replaced := pctEncodedCharOneOrMore.ReplaceAllStringFunc(string(iri), func(pctEscaped string) string {
+	replaced := pctEncodedCharOneOrMore.ReplaceAllStringFunc(iri.value, func(pctEscaped string) string {
 		octets := make([]byte, len(pctEscaped)/3)
 		for i := 0; i < len(octets); i++ {
 			start := i * 3
@@ -351,9 +353,9 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 		return normalized
 	})
 	if len(errs) != 0 {
-		return IRI(replaced), errs[0]
+		return IRI{value: replaced}, errs[0]
 	}
-	return IRI(replaced), nil
+	return IRI{value: replaced}, nil
 }
 
 func mustCompileNamed(name, expr string) *regexp.Regexp {
