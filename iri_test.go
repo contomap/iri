@@ -217,12 +217,12 @@ func TestString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.value, func(t *testing.T) {
-			iri, err := iri.Parse(tt.value)
+			got, err := iri.Parse(tt.value)
 			if err != nil {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
-			if iri.String() != tt.value {
-				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tt.value, iri, iri)
+			if got.String() != tt.value {
+				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tt.value, got, got)
 			}
 		})
 	}
