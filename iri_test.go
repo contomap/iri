@@ -5,9 +5,7 @@
 package iri
 
 import (
-	"fmt"
 	"regexp"
-	"strings"
 	"testing"
 )
 
@@ -225,7 +223,7 @@ func TestRegExps(t *testing.T) {
 	}
 }
 
-func TestParts_ToIRI(t *testing.T) {
+func TestString(t *testing.T) {
 	tests := []struct {
 		value string
 	}{
@@ -254,24 +252,9 @@ func TestParts_ToIRI(t *testing.T) {
 			if err != nil {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
-			got := iri.parts().toIRI()
-			if got.String() != tt.value {
-				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%s", tt.value, got, partsDescription(got.parts()))
+			if iri.String() != tt.value {
+				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tt.value, iri, iri)
 			}
 		})
 	}
-}
-
-func partsDescription(p *parts) string {
-	s := &strings.Builder{}
-	fmt.Fprintf(s, "    scheme:        %q\n", p.scheme)
-	fmt.Fprintf(s, "    userInfo:      %q\n", p.userInfo)
-	fmt.Fprintf(s, "    host:          %q\n", p.host)
-	fmt.Fprintf(s, "    emptyAuth:     %v\n", p.emptyAuth)
-	fmt.Fprintf(s, "    port:          %q\n", p.port)
-	fmt.Fprintf(s, "    path:          %q\n", p.path)
-	fmt.Fprintf(s, "    query:         %q\n", p.query)
-	fmt.Fprintf(s, "    fragment:      %q\n", p.fragment)
-	fmt.Fprintf(s, "    emptyFragment: %v\n", p.emptyFragment)
-	return s.String()
 }
