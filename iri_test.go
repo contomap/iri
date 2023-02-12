@@ -22,13 +22,6 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 			in:   `https://github.com/google/xtoproto/testing#prop1`,
 			want: "https://github.com/google/xtoproto/testing#prop1",
 		},
-		/* TODO (type-rework) -- this currently results in error because of "invalid fragment". Needs RE change.
-		{
-			name: "c",
-			in:   `http://r&#xE9;sum&#xE9;.example.org`,
-			want: `http://r&#xE9;sum&#xE9;.example.org`,
-		},
-		*/
 		{
 			name: "non ascii é",
 			in:   `http://é.example.org`,
@@ -94,6 +87,15 @@ func TestParse(t *testing.T) {
 			name:    "http://example.org/#André then some whitespace",
 			in:      "http://example.org/#André then some whitespace",
 			want:    ``,
+			wantErr: true,
+		},
+		{
+			// This is an "intentional" parse error; It is to showcase that examples from RFC 3987 with XML notation
+			// must not be taken literally. As per chapter 1.4 (page 5), these are meant to escape the "only US-ASCII"
+			// RFC text. This particular example comes from page 12.
+			name:    "XML notation from RFC to represent non-ascii characters",
+			in:      `http://r&#xE9;sum&#xE9;.example.org`,
+			want:    "",
 			wantErr: true,
 		},
 		{
