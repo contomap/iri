@@ -17,7 +17,15 @@ import (
 //
 // See https://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#dfn-iri.
 type IRI struct {
-	value string
+	Scheme        string
+	EmptyAuth     bool // true if the iri is something like `///path` but if iri is `//hostname/path`
+	UserInfo      string
+	Host          string
+	Port          string
+	Path          string
+	Query         string // with the ?
+	EmptyFragment bool
+	Fragment      string
 }
 
 // Parse parses a string into an IRI and checks that it conforms to RFC 3987.
@@ -46,7 +54,25 @@ func Parse(s string) (IRI, error) {
 	if fragment != "" && !ifragmentRE.MatchString(fragment) {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid fragment %q does not match regexp %s", s, fragment, ifragmentRE)
 	}
-	parsed := IRI{value: s}
+
+	authMatch := iauthorityCaptureRE.FindStringSubmatch(auth)
+	var userInfo, host, port string
+	if len(authMatch) != 0 {
+		userInfo = authMatch[iauthorityUserInfoGroup]
+		host = authMatch[iauthorityHostGroup]
+		port = authMatch[iauthorityPortGroup]
+	}
+	parsed := IRI{
+		Scheme:        match[uriRESchemeGroup],
+		EmptyAuth:     len(match[uriREAuthorityWithSlashSlahGroup]) != 0 && (userInfo == "" && host == "" && port == ""),
+		UserInfo:      userInfo,
+		Host:          host,
+		Port:          port,
+		Path:          match[uriREPathGroup],
+		Query:         match[uriREQueryWithMarkGroup],
+		Fragment:      match[uriREFragmentGroup],
+		EmptyFragment: match[uriREFragmentWithHashGroup] != "",
+	}
 
 	if _, err := parsed.normalizePercentEncoding(); err != nil {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid percent encoding: %w", s, err)
@@ -63,7 +89,35 @@ func (iri IRI) Check() error {
 
 // String reassembles the IRI into a valid IRI string.
 func (iri IRI) String() string {
-	return iri.value
+	s := ""
+	if iri.Scheme != "" {
+		s += iri.Scheme + ":"
+	}
+	if iri.EmptyAuth || iri.UserInfo != "" || iri.Host != "" || iri.Port != "" {
+		s += "//"
+	}
+	if iri.UserInfo != "" { // TODO(reddaly): Deal with blank userInfo
+		s += iri.UserInfo
+	}
+	if iri.Host != "" {
+		s += iri.Host
+	}
+
+	if iri.Port != "" { // TODO(reddaly): Deal with blank
+		s += ":" + iri.Port
+	}
+	if iri.Path != "" { // TODO(reddaly): Deal with blank
+		s += iri.Path
+	}
+	if iri.Query != "" { // TODO(reddaly): Deal with blank
+		s += iri.Query
+	}
+	if iri.Fragment != "" {
+		s += "#" + iri.Fragment
+	} else if iri.EmptyFragment {
+		s += "#"
+	}
+	return s
 }
 
 // ResolveReference resolves an IRI reference to an absolute IRI from an absolute
@@ -75,7 +129,7 @@ func (iri IRI) ResolveReference(other IRI) IRI {
 
 // parts returns the components of the URI or nil if there is a parsing error.
 func (iri IRI) parts() *parts {
-	match := uriRE.FindStringSubmatch(iri.value)
+	match := uriRE.FindStringSubmatch(iri.String())
 	if len(match) == 0 {
 		return nil
 	}
@@ -113,35 +167,17 @@ type parts struct {
 }
 
 func (p *parts) toIRI() IRI {
-	s := ""
-	if p.scheme != "" {
-		s += p.scheme + ":"
-	}
-	if p.emptyAuth || p.userInfo != "" || p.host != "" || p.port != "" {
-		s += "//"
-	}
-	if p.userInfo != "" { // TODO(reddaly): Deal with blank userInfo
-		s += p.userInfo
-	}
-	if p.host != "" {
-		s += p.host
-	}
-
-	if p.port != "" { // TODO(reddaly): Deal with blank
-		s += ":" + p.port
-	}
-	if p.path != "" { // TODO(reddaly): Deal with blank
-		s += p.path
-	}
-	if p.query != "" { // TODO(reddaly): Deal with blank
-		s += p.query
-	}
-	if p.fragment != "" {
-		s += "#" + p.fragment
-	} else if p.emptyFragment {
-		s += "#"
-	}
-	return IRI{value: s}
+	var iri IRI
+	iri.Scheme = p.scheme
+	iri.EmptyAuth = p.emptyAuth
+	iri.UserInfo = p.userInfo
+	iri.Host += p.host
+	iri.Port = p.port
+	iri.Path = p.path
+	iri.Query = p.query
+	iri.EmptyFragment = p.emptyFragment
+	iri.Fragment = p.fragment
+	return iri
 }
 
 // Normalization background reading:
@@ -314,8 +350,10 @@ func (iri IRI) NormalizePercentEncoding() IRI {
 
 func (iri IRI) normalizePercentEncoding() (IRI, error) {
 	var errs []error
+	replaced := iri
+	// TODO (type-rework) - figure out if only the Path component needs replacing (probably not - think of user names; tests are green however)
 	// Find consecutive percent-encoded octets and encode them together.
-	replaced := pctEncodedCharOneOrMore.ReplaceAllStringFunc(iri.value, func(pctEscaped string) string {
+	replaced.Path = pctEncodedCharOneOrMore.ReplaceAllStringFunc(iri.Path, func(pctEscaped string) string {
 		octets := make([]byte, len(pctEscaped)/3)
 		for i := 0; i < len(octets); i++ {
 			start := i * 3
@@ -353,9 +391,9 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 		return normalized
 	})
 	if len(errs) != 0 {
-		return IRI{value: replaced}, errs[0]
+		return IRI{}, errs[0]
 	}
-	return IRI{value: replaced}, nil
+	return replaced, nil
 }
 
 func mustCompileNamed(name, expr string) *regexp.Regexp {
