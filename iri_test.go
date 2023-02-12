@@ -1,12 +1,9 @@
-// Package iri contains facilities for working with Internationalized Resource
-// Identifiers as specified in RFC 3987.
-//
-// RFC reference: https://www.ietf.org/rfc/rfc3987.html
-package iri
+package iri_test
 
 import (
-	"regexp"
 	"testing"
+
+	"github.com/contomap/iri"
 )
 
 func TestIRI_NormalizePercentEncoding(t *testing.T) {
@@ -50,7 +47,7 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			in, err := Parse(tt.in)
+			in, err := iri.Parse(tt.in)
 			if err != nil {
 				t.Errorf("IRI %s is not a valid IRI: %v", tt.in, err)
 			}
@@ -115,7 +112,7 @@ func TestParse(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := Parse(tt.in)
+			got, err := iri.Parse(tt.in)
 			if gotErr := err != nil; gotErr != tt.wantErr {
 				t.Errorf("got err %v, wantErr = %v", err, tt.wantErr)
 			}
@@ -177,47 +174,17 @@ func TestResolveReference(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			base, err := Parse(tt.base)
+			base, err := iri.Parse(tt.base)
 			if err != nil {
 				t.Errorf("base IRI %s is not a valid IRI: %v", tt.base, err)
 			}
-			ref, err := Parse(tt.ref)
+			ref, err := iri.Parse(tt.ref)
 			if err != nil {
 				t.Errorf("ref IRI %s is not a valid IRI: %v", tt.ref, err)
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tt.want {
 				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tt.base, tt.ref, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestRegExps(t *testing.T) {
-	tests := []struct {
-		name string
-		re   *regexp.Regexp
-		in   string
-		want bool
-	}{
-		{
-			name: "space is not a valid iri character",
-			re:   iunreservedRE,
-			in:   ` `,
-			want: false,
-		},
-		{
-			name: "þ is unreserved",
-			re:   iunreservedRE,
-			in:   "\u00FE",
-			want: true,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.re.MatchString(tt.in)
-			if got != tt.want {
-				t.Errorf("%s.Match(%q) got %v, want %v", tt.re, tt.in, got, tt.want)
 			}
 		})
 	}
@@ -248,7 +215,7 @@ func TestString(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.value, func(t *testing.T) {
-			iri, err := Parse(tt.value)
+			iri, err := iri.Parse(tt.value)
 			if err != nil {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
