@@ -162,7 +162,6 @@ const (
 	pctEncoded          = `%` + hex + hex
 	pctEncodedOneOrMore = `(?:(?:` + pctEncoded + `)+)`
 
-	pchar  = "(?:" + unreserved + "|" + pctEncoded + "|" + subDelims + ")"
 	ipchar = "(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + `|[\:@])`
 
 	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
@@ -230,10 +229,6 @@ const (
 		`1\d\d` + `|` + // 100-199
 		`2[0-4]\d` + `|` + // 200-249
 		`25[0-5]` + `)` // 250-255
-)
-
-var (
-	ipLiteralRE = mustCompileNamed("ipLiteralRE", `(?:`+ipLiteral+`)`)
 )
 
 var (
