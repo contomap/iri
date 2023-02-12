@@ -191,7 +191,7 @@ const (
 	hex        = `[0-9A-Fa-f]`
 	alphaChars = "[a-zA-Z]" // see https://tools.ietf.org/html/rfc5234 B.1. "ALPHA"
 	digitChars = `\d`       // see https://tools.ietf.org/html/rfc5234 B.1. "DIGIT"
-	ucschar    = (`[\xA0-\x{D7FF}` +
+	ucschar    = `[\xA0-\x{D7FF}` +
 		`\x{F900}-\x{FDCF}` +
 		`\x{FDF0}-\x{FFEF}` +
 		`\x{10000}-\x{1FFFD}` +
@@ -207,9 +207,9 @@ const (
 		`\x{B0000}-\x{BFFFD}` +
 		`\x{C0000}-\x{CFFFD}` +
 		`\x{D0000}-\x{DFFFD}` +
-		`\x{E1000}-\x{EFFFD}]`)
-	unreserved  = (`(?:` + alphaChars + "|" + digitChars + `|[\-\._~]` + `)`)
-	iunreserved = (`(?:` + alphaChars + "|" + digitChars + `|[\-\._~]|` + ucschar + `)`)
+		`\x{E1000}-\x{EFFFD}]`
+	unreserved  = `(?:` + alphaChars + "|" + digitChars + `|[\-\._~]` + `)`
+	iunreserved = `(?:` + alphaChars + "|" + digitChars + `|[\-\._~]|` + ucschar + `)`
 
 	subDelims           = `[!\$\&\'\(\)\*\+\,\;\=]`
 	pctEncoded          = `%` + hex + hex
@@ -230,11 +230,11 @@ const (
 	ihost                   = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
 	iregName                = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)" // *( iunreserved / pctEncoded / subDelims )
 
-	ipath = (`(?:` + ipathabempty + // begins with "/" or is empty
+	ipath = `(?:` + ipathabempty + // begins with "/" or is empty
 		`|` + ipathabsolute + // begins with "/" but not "//"
 		`|` + ipathnoscheme + // begins with a non-colon segment
 		`|` + ipathrootless + // begins with a segment
-		`|` + ipathempty + `)`) // zero characters
+		`|` + ipathempty + `)` // zero characters
 
 	ipathabempty  = `(?:(?:\/` + isegment + `)*)`
 	ipathabsolute = `(?:\/(?:` + isegmentnz + `(?:\/` + isegment + `)*` + `)?)`
@@ -261,7 +261,7 @@ const (
 	ipVFuture = `v` + hex + `\.(?:` + unreserved + `|` + subDelims + `|\:)*`
 
 	// see https://stackoverflow.com/questions/3032593/using-explicitly-numbered-repetition-instead-of-question-mark-star-and-plus
-	ipV6Address = (`(?:` +
+	ipV6Address = `(?:` +
 		`(?:(?:` + h16 + `\:){6}` + ls32 + `)` + //          6( h16 `:` ) ls32
 		// TODO(reddaly): below lines
 		//  + `|` +                       `::` 5( h16 `:` ) ls32
@@ -272,17 +272,17 @@ const (
 		//  + `|` + [ *4( h16 `:` ) h16 ] `::`              ls32
 		//  + `|` + [ *5( h16 `:` ) h16 ] `::`              h16
 		//  + `|` + [ *6( h16 `:` ) h16 ] `::`
-		`)`)
+		`)`
 
 	h16         = `(?:` + hex + hex + hex + hex + `)`
 	ls32        = `(?:` + h16 + `\:` + h16 + `|` + ipV4Address + `)`
 	ipV4Address = `(?:` + decOctet + `.` + decOctet + `.` + decOctet + `.` + decOctet + `)`
 
-	decOctet = (`(?:\d` + `|` + // 0-9
+	decOctet = `(?:\d` + `|` + // 0-9
 		`[1-9]\d` + `|` + // 10-99
 		`1\d\d` + `|` + // 100-199
 		`2[0-4]\d` + `|` + // 200-249
-		`25[0-5]` + `)`) // 250-255
+		`25[0-5]` + `)` // 250-255
 )
 
 var (
