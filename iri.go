@@ -124,60 +124,7 @@ func (iri IRI) String() string {
 // base IRI u, per RFC 3986 Section 5.2. The IRI reference may be relative or
 // absolute.
 func (iri IRI) ResolveReference(other IRI) IRI {
-	return resolveReference(iri.parts(), other.parts()).toIRI()
-}
-
-// parts returns the components of the URI or nil if there is a parsing error.
-func (iri IRI) parts() *parts {
-	match := uriRE.FindStringSubmatch(iri.String())
-	if len(match) == 0 {
-		return nil
-	}
-	auth := match[uriREAuthorityGroup]
-	authMatch := iauthorityCaptureRE.FindStringSubmatch(auth)
-	var userInfo, host, port string
-	if len(authMatch) != 0 {
-		userInfo = authMatch[iauthorityUserInfoGroup]
-		host = authMatch[iauthorityHostGroup]
-		port = authMatch[iauthorityPortGroup]
-	}
-	return &parts{
-		scheme:        match[uriRESchemeGroup],
-		emptyAuth:     len(match[uriREAuthorityWithSlashSlahGroup]) != 0 && (userInfo == "" && host == "" && port == ""),
-		userInfo:      userInfo,
-		host:          host,
-		port:          port,
-		path:          match[uriREPathGroup],
-		query:         match[uriREQueryWithMarkGroup],
-		fragment:      match[uriREFragmentGroup],
-		emptyFragment: match[uriREFragmentWithHashGroup] != "",
-	}
-}
-
-type parts struct {
-	scheme        string
-	emptyAuth     bool // true if the iri is something like `///path` but if iri is `//hostname/path`
-	userInfo      string
-	host          string
-	port          string
-	path          string
-	query         string // with the ?
-	emptyFragment bool
-	fragment      string
-}
-
-func (p *parts) toIRI() IRI {
-	var iri IRI
-	iri.Scheme = p.scheme
-	iri.EmptyAuth = p.emptyAuth
-	iri.UserInfo = p.userInfo
-	iri.Host += p.host
-	iri.Port = p.port
-	iri.Path = p.path
-	iri.Query = p.query
-	iri.EmptyFragment = p.emptyFragment
-	iri.Fragment = p.fragment
-	return iri
+	return resolveReference(iri, other)
 }
 
 // Normalization background reading:
