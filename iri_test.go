@@ -24,18 +24,18 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 		},
 		{
 			name: "non ascii é",
-			in:   `http://é.example.org`,
-			want: `http://é.example.org`,
+			in:   `https://é.example.org`,
+			want: `https://é.example.org`,
 		},
 		{
 			name: "Preserve percent encoding when it is necessary",
-			in:   `http://é.example.org/dog%20house/%c2%B5`,
-			want: `http://é.example.org/dog%20house/µ`,
+			in:   `https://é.example.org/dog%20house/%c2%B5`,
+			want: `https://é.example.org/dog%20house/µ`,
 		},
 		{
 			name: "Example from https://github.com/google/xtoproto/issues/23",
-			in:   "http://wiktionary.org/wiki/%E1%BF%AC%CF%8C%CE%B4%CE%BF%CF%82",
-			want: `http://wiktionary.org/wiki/Ῥόδος`,
+			in:   "https://wiktionary.org/wiki/%E1%BF%AC%CF%8C%CE%B4%CE%BF%CF%82",
+			want: `https://wiktionary.org/wiki/Ῥόδος`,
 		},
 	}
 	for _, tt := range tests {
@@ -64,9 +64,9 @@ func TestParse(t *testing.T) {
 			want: "https://github.com/google/xtoproto/testing#prop1",
 		},
 		{
-			name: "http://example.org/#André",
-			in:   `http://example.org/#André`,
-			want: `http://example.org/#André`,
+			name: "https://example.org/#André",
+			in:   `https://example.org/#André`,
+			want: `https://example.org/#André`,
 		},
 		{
 			name: "valid urn:uuid",
@@ -84,8 +84,8 @@ func TestParse(t *testing.T) {
 			want: `a:b:c:`,
 		},
 		{
-			name:    "http://example.org/#André then some whitespace",
-			in:      "http://example.org/#André then some whitespace",
+			name:    "https://example.org/#André then some whitespace",
+			in:      "https://example.org/#André then some whitespace",
 			want:    ``,
 			wantErr: true,
 		},
@@ -94,20 +94,20 @@ func TestParse(t *testing.T) {
 			// must not be taken literally. As per chapter 1.4 (page 5), these are meant to escape the "only US-ASCII"
 			// RFC text. This particular example comes from page 12.
 			name:    "XML notation from RFC to represent non-ascii characters",
-			in:      `http://r&#xE9;sum&#xE9;.example.org`,
+			in:      `https://r&#xE9;sum&#xE9;.example.org`,
 			want:    "",
 			wantErr: true,
 		},
 		{
 			name:    "invalid utf-8 B5",
-			in:      `http://é.example.org/dog%20house/%B5`,
+			in:      `https://é.example.org/dog%20house/%B5`,
 			want:    ``,
 			wantErr: true,
 		},
 		{
 			// 181 is not a valid utf-8 octal. Check out https://www.utf8-chartable.de/.
 			name:    "invalid utf-8 B5",
-			in:      `http://é.example.org/dog%20house/%20%b5`,
+			in:      `https://é.example.org/dog%20house/%20%b5`,
 			want:    ``,
 			wantErr: true,
 		},
@@ -163,9 +163,9 @@ func TestResolveReference(t *testing.T) {
 		},
 		{
 			name: "replace completely",
-			base: "http://red@google.com:341",
-			ref:  `http://example/q?abc=1&def=2`,
-			want: `http://example/q?abc=1&def=2`,
+			base: "https://red@google.com:341",
+			ref:  `https://example/q?abc=1&def=2`,
+			want: `https://example/q?abc=1&def=2`,
 		},
 		// {
 		// 	name: "An empty same document reference \"\" resolves against the URI part of the base URI; any fragment part is ignored. See Uniform Resource Identifiers (URI) [RFC3986]",
