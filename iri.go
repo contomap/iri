@@ -198,7 +198,7 @@ const (
 
 	ifragment = `(?:(?:` + ipchar + `|` + `[\/\?]` + `)*)`
 
-	iprivate = `[\x{E000}-\x{F8FF}` + `\x{F0000]-\x{FFFFD}` + `\x{100000}-\x{10FFFD}]`
+	iprivate = `[\x{E000}-\x{F8FF}` + `\x{F0000}-\x{FFFFD}` + `\x{100000}-\x{10FFFD}]`
 )
 
 // IP Address related
@@ -241,7 +241,7 @@ var (
 	iauthorityRE        = mustCompileNamed("iauthorityRE", "^"+iauthority+"$")
 	iauthorityCaptureRE = mustCompileNamed("iauthorityCaptureRE", "^"+iauthorityCapture+"$")
 	ipathRE             = mustCompileNamed("ipath", "^"+ipath+"$")
-	iqueryRE            = mustCompileNamed("iquery", "^"+ipath+"$")
+	iqueryRE            = mustCompileNamed("iquery", "^"+iquery+"$")
 	ifragmentRE         = mustCompileNamed("ifragment", "^"+ifragment+"$")
 
 	percentEncodedChar      = mustCompileNamed("percentEncodedChar", pctEncoded)
