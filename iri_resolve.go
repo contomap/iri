@@ -40,10 +40,9 @@ func resolveReference(base, ref IRI) IRI {
 	refQuery, refHasQuery := ref.Query, ref.ForceQuery || ref.Query != ""
 	res := IRI{
 		Scheme:        ref.Scheme,
-		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.Port == "" && ref.UserInfo == "",
-		Host:          ref.Host,
+		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.UserInfo == "",
 		UserInfo:      ref.UserInfo,
-		Port:          ref.Port,
+		Host:          ref.Host,
 		Path:          ref.Path,
 		ForceQuery:    refQuery == "" && refHasQuery,
 		Query:         ref.Query,

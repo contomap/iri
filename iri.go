@@ -20,8 +20,7 @@ type IRI struct {
 	Scheme        string
 	EmptyAuth     bool // true if the iri is something like `///path` but if iri is `//hostname/path`
 	UserInfo      string
-	Host          string
-	Port          string
+	Host          string // host including port information
 	Path          string
 	ForceQuery    bool // append a query ('?') even if Query is empty
 	Query         string
@@ -57,18 +56,16 @@ func Parse(s string) (IRI, error) {
 	}
 
 	authMatch := iauthorityCaptureRE.FindStringSubmatch(auth)
-	var userInfo, host, port string
+	var userInfo, host string
 	if len(authMatch) != 0 {
 		userInfo = authMatch[iauthorityUserInfoGroup]
-		host = authMatch[iauthorityHostGroup]
-		port = authMatch[iauthorityPortGroup]
+		host = authMatch[iauthorityHostPortGroup]
 	}
 	parsed := IRI{
 		Scheme:        match[uriRESchemeGroup],
-		EmptyAuth:     len(match[uriREAuthorityWithSlashSlahGroup]) != 0 && (userInfo == "" && host == "" && port == ""),
+		EmptyAuth:     len(match[uriREAuthorityWithSlashSlashGroup]) != 0 && (userInfo == "" && host == ""),
 		UserInfo:      userInfo,
 		Host:          host,
-		Port:          port,
 		Path:          match[uriREPathGroup],
 		ForceQuery:    match[uriREQueryWithMarkGroup] != "",
 		Query:         match[uriREQueryGroup],
@@ -95,7 +92,7 @@ func (iri IRI) String() string {
 	if iri.Scheme != "" {
 		s += iri.Scheme + ":"
 	}
-	if iri.EmptyAuth || iri.UserInfo != "" || iri.Host != "" || iri.Port != "" {
+	if iri.EmptyAuth || iri.UserInfo != "" || iri.Host != "" {
 		s += "//"
 	}
 	if iri.UserInfo != "" { // TODO(reddaly): Deal with blank userInfo
@@ -105,9 +102,6 @@ func (iri IRI) String() string {
 		s += iri.Host
 	}
 
-	if iri.Port != "" { // TODO(reddaly): Deal with blank
-		s += ":" + iri.Port
-	}
 	if iri.Path != "" { // TODO(reddaly): Deal with blank
 		s += iri.Path
 	}
@@ -167,10 +161,9 @@ const (
 	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
 
 	iauthority              = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
-	iauthorityCapture       = `(?:(` + iuserinfo + "@)?(" + ihost + `)(?:\:(` + port + `))?)`
+	iauthorityCapture       = `(?:(` + iuserinfo + "@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
 	iauthorityUserInfoGroup = 1
-	iauthorityHostGroup     = 2
-	iauthorityPortGroup     = 3
+	iauthorityHostPortGroup = 2
 	iuserinfo               = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `)*)`
 	port                    = `(?:\d*)`
 	ihost                   = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
@@ -266,15 +259,15 @@ var (
 	}()
 
 	// re from RFC 3986 page 50.
-	uriRE                            = mustCompileNamed("uriRE", `^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?`)
-	uriRESchemeGroup                 = 2
-	uriREAuthorityWithSlashSlahGroup = 3
-	uriREAuthorityGroup              = 4
-	uriREPathGroup                   = 5
-	uriREQueryWithMarkGroup          = 6
-	uriREQueryGroup                  = 7
-	uriREFragmentGroup               = 9
-	uriREFragmentWithHashGroup       = 8
+	uriRE                             = mustCompileNamed("uriRE", `^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?`)
+	uriRESchemeGroup                  = 2
+	uriREAuthorityWithSlashSlashGroup = 3
+	uriREAuthorityGroup               = 4
+	uriREPathGroup                    = 5
+	uriREQueryWithMarkGroup           = 6
+	uriREQueryGroup                   = 7
+	uriREFragmentGroup                = 9
+	uriREFragmentWithHashGroup        = 8
 )
 
 // NormalizePercentEncoding returns an IRI that replaces any unnecessarily
