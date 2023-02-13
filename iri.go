@@ -96,7 +96,7 @@ func (iri IRI) String() string {
 		s += "//"
 	}
 	if iri.UserInfo != "" { // TODO(reddaly): Deal with blank userInfo
-		s += iri.UserInfo
+		s += iri.UserInfo + "@"
 	}
 	if iri.Host != "" {
 		s += iri.Host
@@ -161,10 +161,10 @@ const (
 	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
 
 	iauthority              = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
-	iauthorityCapture       = `(?:(` + iuserinfo + "@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
+	iauthorityCapture       = `(?:(?:(` + iuserinfo + ")@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
 	iauthorityUserInfoGroup = 1
 	iauthorityHostPortGroup = 2
-	iuserinfo               = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `)*)`
+	iuserinfo               = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
 	port                    = `(?:\d*)`
 	ihost                   = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
 	iregName                = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)" // *( iunreserved / pctEncoded / subDelims )

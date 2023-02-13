@@ -280,3 +280,73 @@ func TestStringFromCreatedObject(t *testing.T) {
 		})
 	}
 }
+
+type verifyFunc func(testing.TB, iri.IRI)
+
+func TestProperties(t *testing.T) {
+	tt := []struct {
+		in     string
+		verify verifyFunc
+	}{
+		{in: "", verify: is(iri.IRI{})},
+		{in: "test:", verify: hasScheme("test")},
+		{in: "test:example.com:1234", verify: hasScheme("test")},
+		{in: "//example.com:1234", verify: allOf(hasScheme(""), hasHost("example.com:1234"))},
+		{in: "https://user:pwd@example.com", verify: allOf(hasScheme("https"), hasUser("user:pwd"), hasHost("example.com"))},
+	}
+
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.in, func(t *testing.T) {
+			t.Parallel()
+			got, err := iri.Parse(tc.in)
+			if err != nil {
+				t.Fatalf("Parse() returned error: %v", err)
+			}
+			tc.verify(t, got)
+			if t.Failed() {
+				t.Logf("got: %#v", got)
+			}
+		})
+	}
+}
+
+func hasScheme(expected string) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		if got.Scheme != expected {
+			t.Errorf("invalid scheme. want: '%v'", expected)
+		}
+	}
+}
+
+func hasHost(expected string) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		if got.Host != expected {
+			t.Errorf("invalid host. want: '%v'", expected)
+		}
+	}
+}
+
+func hasUser(expected string) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		if got.UserInfo != expected {
+			t.Errorf("invalid user info. want: '%v'", expected)
+		}
+	}
+}
+
+func is(expected iri.IRI) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		if got != expected {
+			t.Errorf("is not matching. want: %#v", expected)
+		}
+	}
+}
+
+func allOf(list ...verifyFunc) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		for _, entry := range list {
+			entry(t, got)
+		}
+	}
+}
