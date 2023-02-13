@@ -23,8 +23,9 @@ type IRI struct {
 	Host          string
 	Port          string
 	Path          string
-	Query         string // with the ?
-	ForceFragment bool   // append a fragment ('#') even if Fragment field is empty
+	ForceQuery    bool // append a query ('?') even if Query is empty
+	Query         string
+	ForceFragment bool // append a fragment ('#') even if Fragment field is empty
 	Fragment      string
 }
 
@@ -69,9 +70,10 @@ func Parse(s string) (IRI, error) {
 		Host:          host,
 		Port:          port,
 		Path:          match[uriREPathGroup],
-		Query:         match[uriREQueryWithMarkGroup],
-		Fragment:      match[uriREFragmentGroup],
+		ForceQuery:    match[uriREQueryWithMarkGroup] != "",
+		Query:         match[uriREQueryGroup],
 		ForceFragment: match[uriREFragmentWithHashGroup] != "",
+		Fragment:      match[uriREFragmentGroup],
 	}
 
 	if _, err := parsed.normalizePercentEncoding(); err != nil {
@@ -109,8 +111,8 @@ func (iri IRI) String() string {
 	if iri.Path != "" { // TODO(reddaly): Deal with blank
 		s += iri.Path
 	}
-	if iri.Query != "" { // TODO(reddaly): Deal with blank
-		s += iri.Query
+	if iri.ForceQuery || iri.Query != "" {
+		s += "?" + iri.Query
 	}
 	if iri.ForceFragment || (iri.Fragment != "") {
 		s += "#" + iri.Fragment

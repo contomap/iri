@@ -37,6 +37,7 @@ import "strings"
 
 func resolveReference(base, ref IRI) IRI {
 	refFrag, refHasFrag := ref.Fragment, ref.ForceFragment || ref.Fragment != ""
+	refQuery, refHasQuery := ref.Query, ref.ForceQuery || ref.Query != ""
 	res := IRI{
 		Scheme:        ref.Scheme,
 		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.Port == "" && ref.UserInfo == "",
@@ -44,9 +45,10 @@ func resolveReference(base, ref IRI) IRI {
 		UserInfo:      ref.UserInfo,
 		Port:          ref.Port,
 		Path:          ref.Path,
-		Fragment:      refFrag,
-		ForceFragment: refFrag == "" && refHasFrag,
+		ForceQuery:    refQuery == "" && refHasQuery,
 		Query:         ref.Query,
+		ForceFragment: refFrag == "" && refHasFrag,
+		Fragment:      refFrag,
 	}
 	if ref.Scheme == "" {
 		res.Scheme = base.Scheme
@@ -67,6 +69,7 @@ func resolveReference(base, ref IRI) IRI {
 	// }
 	if res.Path == "" && ref.Query == "" {
 		res.Query = base.Query
+		res.ForceQuery = base.ForceQuery
 
 		if !refHasFrag {
 			baseFrag, baseHasFrag := base.Fragment, base.ForceFragment || base.Fragment != ""
