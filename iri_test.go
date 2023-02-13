@@ -240,7 +240,7 @@ func TestString(t *testing.T) {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
 			if got.String() != tc.value {
-				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
+				t.Errorf("Parse().String() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
 			}
 		})
 	}
