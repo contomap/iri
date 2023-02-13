@@ -245,3 +245,35 @@ func TestString(t *testing.T) {
 		})
 	}
 }
+
+func TestStringFromCreatedObject(t *testing.T) {
+	tt := []struct {
+		in   iri.IRI
+		want string
+	}{
+		{in: iri.IRI{}, want: ""},
+
+		{in: iri.IRI{ForceFragment: true}, want: "#"},
+		{in: iri.IRI{ForceFragment: true, Fragment: "forcedFragment"}, want: "#forcedFragment"},
+		{in: iri.IRI{ForceFragment: false, Fragment: "loneFragment"}, want: "#loneFragment"},
+
+		{in: iri.IRI{ForceQuery: true}, want: "?"},
+		{in: iri.IRI{ForceQuery: true, Query: "q=forced"}, want: "?q=forced"},
+		{in: iri.IRI{ForceQuery: false, Query: "q=lone"}, want: "?q=lone"},
+	}
+
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.want, func(t *testing.T) {
+			t.Parallel()
+			got := tc.in.String()
+			if got != tc.want {
+				t.Errorf("String() mismatch: got: '%s', want: '%s'", got, tc.want)
+			}
+			err := tc.in.Check()
+			if err != nil {
+				t.Errorf("Check() returned error: %v", err)
+			}
+		})
+	}
+}

@@ -111,7 +111,7 @@ func (iri IRI) String() string {
 	if iri.Path != "" { // TODO(reddaly): Deal with blank
 		s += iri.Path
 	}
-	if iri.ForceQuery || iri.Query != "" {
+	if iri.ForceQuery || (iri.Query != "") {
 		s += "?" + iri.Query
 	}
 	if iri.ForceFragment || (iri.Fragment != "") {
