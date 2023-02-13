@@ -36,7 +36,7 @@ package iri
 import "strings"
 
 func resolveReference(base, ref IRI) IRI {
-	refFrag, refHasFrag := ref.Fragment, ref.EmptyFragment || ref.Fragment != ""
+	refFrag, refHasFrag := ref.Fragment, ref.ForceFragment || ref.Fragment != ""
 	res := IRI{
 		Scheme:        ref.Scheme,
 		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.Port == "" && ref.UserInfo == "",
@@ -45,7 +45,7 @@ func resolveReference(base, ref IRI) IRI {
 		Port:          ref.Port,
 		Path:          ref.Path,
 		Fragment:      refFrag,
-		EmptyFragment: refFrag == "" && refHasFrag,
+		ForceFragment: refFrag == "" && refHasFrag,
 		Query:         ref.Query,
 	}
 	if ref.Scheme == "" {
@@ -69,9 +69,9 @@ func resolveReference(base, ref IRI) IRI {
 		res.Query = base.Query
 
 		if !refHasFrag {
-			baseFrag, baseHasFrag := base.Fragment, base.EmptyFragment || base.Fragment != ""
+			baseFrag, baseHasFrag := base.Fragment, base.ForceFragment || base.Fragment != ""
 			res.Fragment = baseFrag
-			res.EmptyFragment = baseFrag == "" && baseHasFrag
+			res.ForceFragment = baseFrag == "" && baseHasFrag
 		}
 	}
 	// The "abs_path" or "rel_path" cases.
