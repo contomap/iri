@@ -7,7 +7,7 @@ import (
 )
 
 func TestIRI_NormalizePercentEncoding(t *testing.T) {
-	tests := []struct {
+	tt := []struct {
 		name string
 		in   string
 		want string
@@ -38,21 +38,23 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 			want: `https://wiktionary.org/wiki/Ῥόδος`,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			in, err := iri.Parse(tt.in)
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			in, err := iri.Parse(tc.in)
 			if err != nil {
-				t.Errorf("IRI %s is not a valid IRI: %v", tt.in, err)
+				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
 			}
-			if got := in.NormalizePercentEncoding(); got.String() != tt.want {
-				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tt.in, got, tt.want)
+			if got := in.NormalizePercentEncoding(); got.String() != tc.want {
+				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
 			}
 		})
 	}
 }
 
 func TestParse(t *testing.T) {
-	tests := []struct {
+	tt := []struct {
 		name    string
 		in      string
 		want    string
@@ -117,21 +119,23 @@ func TestParse(t *testing.T) {
 			wantErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := iri.Parse(tt.in)
-			if gotErr := err != nil; gotErr != tt.wantErr {
-				t.Errorf("got err %v, wantErr = %v", err, tt.wantErr)
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			got, err := iri.Parse(tc.in)
+			if gotErr := err != nil; gotErr != tc.wantErr {
+				t.Errorf("got err %v, wantErr = %v", err, tc.wantErr)
 			}
-			if got.String() != tt.want {
-				t.Errorf("Parse(%q) got %s, want %s", tt.in, got, tt.want)
+			if got.String() != tc.want {
+				t.Errorf("Parse(%q) got %s, want %s", tc.in, got, tc.want)
 			}
 		})
 	}
 }
 
 func TestResolveReference(t *testing.T) {
-	tests := []struct {
+	tt := []struct {
 		name      string
 		base, ref string
 		want      string
@@ -179,26 +183,28 @@ func TestResolveReference(t *testing.T) {
 		// 	want: `http://bigbird@google.com/path`,
 		// },
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			base, err := iri.Parse(tt.base)
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			base, err := iri.Parse(tc.base)
 			if err != nil {
-				t.Errorf("base IRI %s is not a valid IRI: %v", tt.base, err)
+				t.Errorf("base IRI %s is not a valid IRI: %v", tc.base, err)
 			}
-			ref, err := iri.Parse(tt.ref)
+			ref, err := iri.Parse(tc.ref)
 			if err != nil {
-				t.Errorf("ref IRI %s is not a valid IRI: %v", tt.ref, err)
+				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
 			}
 			got := base.ResolveReference(ref).String()
-			if got != tt.want {
-				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tt.base, tt.ref, got, tt.want)
+			if got != tc.want {
+				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tc.base, tc.ref, got, tc.want)
 			}
 		})
 	}
 }
 
 func TestString(t *testing.T) {
-	tests := []struct {
+	tt := []struct {
 		value string
 	}{
 		{""},
@@ -225,14 +231,16 @@ func TestString(t *testing.T) {
 		{"https://#"},
 		{`http://example/q?abc=1&def=2`},
 	}
-	for _, tt := range tests {
-		t.Run(tt.value, func(t *testing.T) {
-			got, err := iri.Parse(tt.value)
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.value, func(t *testing.T) {
+			t.Parallel()
+			got, err := iri.Parse(tc.value)
 			if err != nil {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
-			if got.String() != tt.value {
-				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tt.value, got, got)
+			if got.String() != tc.value {
+				t.Errorf(".parts().toIRI() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
 			}
 		})
 	}
