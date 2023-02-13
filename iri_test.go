@@ -46,6 +46,7 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 			if err != nil {
 				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
 			}
+			// TODO (type-rework) Parse() already normalizes -- extract test; also: add cases for non-path encoding
 			if got := in.NormalizePercentEncoding(); got.String() != tc.want {
 				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
 			}
