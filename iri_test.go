@@ -230,6 +230,9 @@ func TestString(t *testing.T) {
 		{"https://example.com:22/path/to?q=a#"},
 		{"https://#"},
 		{`http://example/q?abc=1&def=2`},
+
+		{"scheme:opaque?query#fragment"},
+		{"scheme://userinfo@host/path?query#fragment"},
 	}
 	for _, tc := range tt {
 		tc := tc
