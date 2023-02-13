@@ -38,6 +38,7 @@ import "strings"
 func resolveReference(base, ref IRI) IRI {
 	refFrag, refHasFrag := ref.Fragment, ref.ForceFragment || ref.Fragment != ""
 	refQuery, refHasQuery := ref.Query, ref.ForceQuery || ref.Query != ""
+	// TODO (type-rework) handle ForceUserInfo
 	res := IRI{
 		Scheme:        ref.Scheme,
 		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.UserInfo == "",

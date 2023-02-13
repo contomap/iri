@@ -233,6 +233,8 @@ func TestString(t *testing.T) {
 
 		{"scheme:opaque?query#fragment"},
 		{"scheme://userinfo@host/path?query#fragment"},
+
+		{"https://@example.com"},
 	}
 	for _, tc := range tt {
 		tc := tc
@@ -293,6 +295,7 @@ func TestProperties(t *testing.T) {
 		{in: "test:example.com:1234", verify: hasScheme("test")},
 		{in: "//example.com:1234", verify: allOf(hasScheme(""), hasHost("example.com:1234"))},
 		{in: "https://user:pwd@example.com", verify: allOf(hasScheme("https"), hasUser("user:pwd"), hasHost("example.com"))},
+		{in: "https://@example.com", verify: allOf(hasScheme("https"), hasUser(""), hasHost("example.com"))},
 	}
 
 	for _, tc := range tt {

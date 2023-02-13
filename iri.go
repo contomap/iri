@@ -19,6 +19,7 @@ import (
 type IRI struct {
 	Scheme        string
 	EmptyAuth     bool // true if the iri is something like `///path` but if iri is `//hostname/path`
+	ForceUserInfo bool // append an at ('@') even if UserInfo is empty
 	UserInfo      string
 	Host          string // host including port information
 	Path          string
@@ -57,13 +58,16 @@ func Parse(s string) (IRI, error) {
 
 	authMatch := iauthorityCaptureRE.FindStringSubmatch(auth)
 	var userInfo, host string
+	var forceUserInfo bool
 	if len(authMatch) != 0 {
+		forceUserInfo = authMatch[iauthorityUserInfoWithAtGroup] != ""
 		userInfo = authMatch[iauthorityUserInfoGroup]
 		host = authMatch[iauthorityHostPortGroup]
 	}
 	parsed := IRI{
 		Scheme:        match[uriRESchemeGroup],
 		EmptyAuth:     len(match[uriREAuthorityWithSlashSlashGroup]) != 0 && (userInfo == "" && host == ""),
+		ForceUserInfo: forceUserInfo,
 		UserInfo:      userInfo,
 		Host:          host,
 		Path:          match[uriREPathGroup],
@@ -95,7 +99,7 @@ func (iri IRI) String() string {
 	if iri.EmptyAuth || iri.UserInfo != "" || iri.Host != "" {
 		s += "//"
 	}
-	if iri.UserInfo != "" { // TODO(reddaly): Deal with blank userInfo
+	if iri.ForceUserInfo || (iri.UserInfo != "") {
 		s += iri.UserInfo + "@"
 	}
 	if iri.Host != "" {
@@ -160,14 +164,15 @@ const (
 
 	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
 
-	iauthority              = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
-	iauthorityCapture       = `(?:(?:(` + iuserinfo + ")@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
-	iauthorityUserInfoGroup = 1
-	iauthorityHostPortGroup = 2
-	iuserinfo               = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
-	port                    = `(?:\d*)`
-	ihost                   = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
-	iregName                = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)" // *( iunreserved / pctEncoded / subDelims )
+	iauthority                    = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
+	iauthorityCapture             = `(?:((` + iuserinfo + ")@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
+	iauthorityUserInfoWithAtGroup = 1
+	iauthorityUserInfoGroup       = 2
+	iauthorityHostPortGroup       = 3
+	iuserinfo                     = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
+	port                          = `(?:\d*)`
+	ihost                         = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
+	iregName                      = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)" // *( iunreserved / pctEncoded / subDelims )
 
 	ipath = `(?:` + ipathabempty + // begins with "/" or is empty
 		`|` + ipathabsolute + // begins with "/" but not "//"
