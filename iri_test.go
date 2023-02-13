@@ -203,6 +203,8 @@ func TestString(t *testing.T) {
 	}{
 		{""},
 		{"example.com"},
+		{"example.com:"},
+		{"example.com:0"},
 		{"example.com:22"},
 		{"example.com:22/path/to"},
 		{"example.com:22/path/to?"},
