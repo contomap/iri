@@ -18,7 +18,7 @@ import (
 // See https://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#dfn-iri.
 type IRI struct {
 	Scheme        string
-	EmptyAuth     bool // true if the iri is something like `///path` but if iri is `//hostname/path`
+	EmptyAuth     bool // true if the iri is something like `///path`
 	ForceUserInfo bool // append an at ('@') even if UserInfo is empty
 	UserInfo      string
 	Host          string // host including port information
@@ -105,8 +105,7 @@ func (iri IRI) String() string {
 	if iri.Host != "" {
 		s += iri.Host
 	}
-
-	if iri.Path != "" { // TODO(reddaly): Deal with blank
+	if iri.Path != "" {
 		s += iri.Path
 	}
 	if iri.ForceQuery || (iri.Query != "") {

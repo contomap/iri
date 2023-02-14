@@ -340,6 +340,10 @@ func TestProperties(t *testing.T) {
 		{in: "//[1::6:7:8]", verify: hasHost("[1::6:7:8]")},
 		{in: "//[1::7:8]", verify: hasHost("[1::7:8]")},
 		{in: "//[1::8]", verify: hasHost("[1::8]")},
+
+		{in: "tel:7042;phone-context=example.com", verify: allOf(hasScheme("tel"), hasPath("7042;phone-context=example.com"))},
+		{in: "email:user@example.com", verify: allOf(hasScheme("email"), hasPath("user@example.com"))},
+		{in: "/", verify: hasPath("/")},
 	}
 
 	for _, tc := range tt {
@@ -366,6 +370,14 @@ func hasScheme(expected string) verifyFunc {
 	}
 }
 
+func hasUser(expected string) verifyFunc {
+	return func(t testing.TB, got iri.IRI) {
+		if got.UserInfo != expected {
+			t.Errorf("invalid user info. want: '%v'", expected)
+		}
+	}
+}
+
 func hasHost(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
 		if got.Host != expected {
@@ -374,10 +386,10 @@ func hasHost(expected string) verifyFunc {
 	}
 }
 
-func hasUser(expected string) verifyFunc {
+func hasPath(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
-		if got.UserInfo != expected {
-			t.Errorf("invalid user info. want: '%v'", expected)
+		if got.Path != expected {
+			t.Errorf("invalid path. want: '%v'", expected)
 		}
 	}
 }

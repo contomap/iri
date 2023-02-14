@@ -60,13 +60,6 @@ func resolveReference(base, ref IRI) IRI {
 		res.Path = resolvePath(ref.Path, "")
 		return res
 	}
-	// TODO(reddaly): Deal with opaque.
-	// if ref.Opaque != "" {
-	// 	url.User = nil
-	// 	url.host = ""
-	// 	url.Path = ""
-	// 	return url
-	// }
 	if res.Path == "" && ref.Query == "" {
 		res.Query = base.Query
 		res.ForceQuery = base.ForceQuery
