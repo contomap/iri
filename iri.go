@@ -239,13 +239,6 @@ var (
 	pctEncodedCharOneOrMore = mustCompileNamed("pctEncodedOneOrMore", pctEncodedOneOrMore)
 	iunreservedRE           = mustCompileNamed("iunreservedRE", "^"+iunreserved+"$")
 
-	hexToRune = func() map[string]rune {
-		m := map[string]rune{}
-		for i := 0; i <= 255; i++ {
-			m[fmt.Sprintf("%02X", i)] = rune(i)
-		}
-		return m
-	}()
 	hexToByte = func() map[string]byte {
 		m := map[string]byte{}
 		for i := 0; i <= 255; i++ {
@@ -292,19 +285,8 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 	// TODO (type-rework) - figure out if only the Path component needs replacing (probably not - think of user names; tests are green however)
 	// Find consecutive percent-encoded octets and encode them together.
 	replaced.Path = pctEncodedCharOneOrMore.ReplaceAllStringFunc(iri.Path, func(pctEscaped string) string {
-		octets := make([]byte, len(pctEscaped)/3)
-		for i := 0; i < len(octets); i++ {
-			start := i * 3
-			digitsStr := strings.ToUpper(pctEscaped[start+1 : start+3])
-			octet, ok := hexToByte[digitsStr]
-			if !ok {
-				panic(fmt.Errorf("internal error: hex %q not present in %+v", octet, hexToRune)) // should not occur because of regexp
-			}
-			octets[i] = octet
-		}
-
 		normalized := ""
-		unconsumedOctets := octets
+		unconsumedOctets := octetsFrom(pctEscaped)
 		octetsOffset := 0
 		for len(unconsumedOctets) > 0 {
 			codePoint, size := utf8.DecodeRune(unconsumedOctets)
@@ -332,6 +314,17 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 		return IRI{}, errs[0]
 	}
 	return replaced, nil
+}
+
+func octetsFrom(pctEscaped string) []byte {
+	octets := make([]byte, len(pctEscaped)/3)
+	for i := 0; i < len(octets); i++ {
+		start := i * 3
+		digitsStr := strings.ToUpper(pctEscaped[start+1 : start+3])
+		octet := hexToByte[digitsStr]
+		octets[i] = octet
+	}
+	return octets
 }
 
 func mustCompileNamed(name, expr string) *regexp.Regexp {
