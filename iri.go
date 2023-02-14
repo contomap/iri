@@ -294,20 +294,10 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 				errs = append(errs, fmt.Errorf("percent-encoded sequence %q  contains invalid UTF-8 code point at start of byte sequence %+v", pctEscaped[octetsOffset*3:], unconsumedOctets))
 				return pctEscaped
 			}
-
-			if iunreservedRE.MatchString(string(codePoint)) {
-				normalized += string(codePoint)
-			} else {
-				buf := make([]byte, 4)
-				codePointOctetCount := utf8.EncodeRune(buf, codePoint)
-				for i := 0; i < codePointOctetCount; i++ {
-					normalized += byteToUppercasePercentEncoding[buf[i]]
-				}
-			}
+			normalized += toUnreservedString(codePoint)
 			unconsumedOctets = unconsumedOctets[size:]
 			octetsOffset += size
 		}
-
 		return normalized
 	})
 	if len(errs) != 0 {
@@ -316,15 +306,29 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 	return replaced, nil
 }
 
-func octetsFrom(pctEscaped string) []byte {
-	octets := make([]byte, len(pctEscaped)/3)
+func octetsFrom(percentEncoded string) []byte {
+	octets := make([]byte, len(percentEncoded)/3)
 	for i := 0; i < len(octets); i++ {
 		start := i * 3
-		digitsStr := strings.ToUpper(pctEscaped[start+1 : start+3])
+		digitsStr := strings.ToUpper(percentEncoded[start+1 : start+3])
 		octet := hexToByte[digitsStr]
 		octets[i] = octet
 	}
 	return octets
+}
+
+func toUnreservedString(r rune) string {
+	isUnreserved := iunreservedRE.MatchString(string(r))
+	if isUnreserved {
+		return string(r)
+	}
+	var percentEncoded string
+	var buf [utf8.UTFMax]byte
+	octetCount := utf8.EncodeRune(buf[:], r)
+	for i := 0; i < octetCount; i++ {
+		percentEncoded += byteToUppercasePercentEncoding[buf[i]]
+	}
+	return percentEncoded
 }
 
 func mustCompileNamed(name, expr string) *regexp.Regexp {
