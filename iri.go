@@ -1,24 +1,18 @@
-// Package iri contains facilities for working with Internationalized Resource
-// Identifiers as specified in RFC 3987.
-//
-// RFC reference: https://www.ietf.org/rfc/rfc3987.html
 package iri
 
 import (
 	"fmt"
-	"regexp"
 	"strings"
 	"unicode/utf8"
 )
 
-// An IRI (Internationalized Resource Identifier) within an RDF graph is a
-// Unicode string [UNICODE] that conforms to the syntax defined in RFC 3987
-// [RFC3987].
+// An IRI (Internationalized Resource Identifier) is a Unicode string [UNICODE]
+// that conforms to the syntax defined in RFC 3987.
 //
-// See https://www.w3.org/TR/2014/REC-rdf11-concepts-20140225/#dfn-iri.
+// See https://www.ietf.org/rfc/rfc3987.html
 type IRI struct {
 	Scheme        string
-	EmptyAuth     bool // true if the iri is something like `///path`
+	EmptyAuth     bool // true if the IRI is something like `///path`
 	ForceUserInfo bool // append an at ('@') even if UserInfo is empty
 	UserInfo      string
 	Host          string // host including port information
@@ -30,6 +24,12 @@ type IRI struct {
 }
 
 // Parse parses a string into an IRI and checks that it conforms to RFC 3987.
+//
+// It performs a coarse segmentation based on a regular expression to separate the components,
+// and then verifies with detailed regular expressions whether the components are correct.
+// Finally, any percent-encoding is verified - yet the returned IRI will have the original percent encoding
+// maintained.
+// If any of these steps produce an error, this function returns an error and an empty IRI.
 func Parse(s string) (IRI, error) {
 	match := uriRE.FindStringSubmatch(s)
 	if len(match) == 0 {
@@ -84,7 +84,8 @@ func Parse(s string) (IRI, error) {
 	return parsed, nil
 }
 
-// String reassembles the IRI into a valid IRI string.
+// String reassembles the IRI into an IRI string.
+// Any components that have been manually set must comply to the format; This function performs no further escaping.
 func (iri IRI) String() string {
 	s := ""
 	if iri.Scheme != "" {
@@ -112,152 +113,10 @@ func (iri IRI) String() string {
 }
 
 // ResolveReference resolves an IRI reference to an absolute IRI from an absolute
-// base IRI u, per RFC 3986 Section 5.2. The IRI reference may be relative or
-// absolute.
+// base IRI u, per RFC 3986 Section 5.2. The IRI reference may be relative or absolute.
 func (iri IRI) ResolveReference(other IRI) IRI {
 	return resolveReference(iri, other)
 }
-
-// Normalization background reading:
-// - https://blog.golang.org/normalization
-// - https://www.ietf.org/rfc/rfc3987.html#section-5
-//    - https://www.ietf.org/rfc/rfc3987.html#section-5.3.2.3 - percent encoding
-
-// Regular expression const strings, mostly derived from
-// https://www.ietf.org/rfc/rfc3987.html#section-2.2.
-const (
-	hex        = `[0-9A-Fa-f]`
-	alphaChars = "[a-zA-Z]" // see https://tools.ietf.org/html/rfc5234 B.1. "ALPHA"
-	digitChars = `\d`       // see https://tools.ietf.org/html/rfc5234 B.1. "DIGIT"
-	ucschar    = `[\xA0-\x{D7FF}` +
-		`\x{F900}-\x{FDCF}` +
-		`\x{FDF0}-\x{FFEF}` +
-		`\x{10000}-\x{1FFFD}` +
-		`\x{20000}-\x{2FFFD}` +
-		`\x{30000}-\x{3FFFD}` +
-		`\x{40000}-\x{4FFFD}` +
-		`\x{50000}-\x{5FFFD}` +
-		`\x{60000}-\x{6FFFD}` +
-		`\x{70000}-\x{7FFFD}` +
-		`\x{80000}-\x{8FFFD}` +
-		`\x{90000}-\x{9FFFD}` +
-		`\x{A0000}-\x{AFFFD}` +
-		`\x{B0000}-\x{BFFFD}` +
-		`\x{C0000}-\x{CFFFD}` +
-		`\x{D0000}-\x{DFFFD}` +
-		`\x{E1000}-\x{EFFFD}]`
-	unreserved  = `(?:` + alphaChars + "|" + digitChars + `|[\-\._~]` + `)`
-	iunreserved = `(?:` + alphaChars + "|" + digitChars + `|[\-\._~]|` + ucschar + `)`
-
-	subDelims           = `[!\$\&\'\(\)\*\+\,\;\=]`
-	pctEncoded          = `%` + hex + hex
-	pctEncodedOneOrMore = `(?:(?:` + pctEncoded + `)+)`
-
-	ipchar = "(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + `|[\:@])`
-
-	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
-
-	iauthority                    = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
-	iauthorityCapture             = `(?:((` + iuserinfo + ")@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
-	iauthorityUserInfoWithAtGroup = 1
-	iauthorityUserInfoGroup       = 2
-	iauthorityHostPortGroup       = 3
-	iuserinfo                     = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
-	port                          = `(?:\d*)`
-	ihost                         = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
-	iregName                      = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)" // *( iunreserved / pctEncoded / subDelims )
-
-	ipath = `(?:` + ipathabempty + // begins with "/" or is empty
-		`|` + ipathabsolute + // begins with "/" but not "//"
-		`|` + ipathnoscheme + // begins with a non-colon segment
-		`|` + ipathrootless + // begins with a segment
-		`|` + ipathempty + `)` // zero characters
-
-	ipathabempty  = `(?:(?:\/` + isegment + `)*)`
-	ipathabsolute = `(?:\/(?:` + isegmentnz + `(?:\/` + isegment + `)*` + `)?)`
-	ipathnoscheme = `(?:` + isegmentnznc + `(?:\/` + isegment + `)*)`
-	ipathrootless = `(?:` + isegmentnz + `(?:\/` + isegment + `)*)`
-	ipathempty    = `(?:)` // zero characters
-
-	isegment   = `(?:` + ipchar + `*)`
-	isegmentnz = `(?:` + ipchar + `+)`
-	// non-zero-length segment without any colon ":"
-	isegmentnznc = `(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|` + `[@])`
-
-	iquery = `(?:(?:` + ipchar + `|` + iprivate + `|` + `\/\?` + `)*)`
-
-	ifragment = `(?:(?:` + ipchar + `|` + `[\/\?]` + `)*)`
-
-	iprivate = `[\x{E000}-\x{F8FF}` + `\x{F0000}-\x{FFFFD}` + `\x{100000}-\x{10FFFD}]`
-)
-
-// IP Address related
-const (
-	ipLiteral = `\[(?:` + ipV6Address + `|` + ipVFuture + `)\]`
-
-	ipVFuture = `v` + hex + `\.(?:` + unreserved + `|` + subDelims + `|\:)*`
-
-	// see https://stackoverflow.com/questions/3032593/using-explicitly-numbered-repetition-instead-of-question-mark-star-and-plus
-	ipV6Address = `(?:` +
-		`(?:(?:` + h16 + `\:){6}` + ls32 + `)` +
-		`|(?:\:\:(?:` + h16 + `\:){5}` + ls32 + `)` +
-		`|(?:(?:` + h16 + `)?\:\:(?:` + h16 + `\:){4}` + ls32 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,1}` + h16 + `)?\:\:(?:` + h16 + `\:){3}` + ls32 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,2}` + h16 + `)?\:\:(?:` + h16 + `\:){2}` + ls32 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,3}` + h16 + `)?\:\:(?:` + h16 + `\:)` + ls32 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,4}` + h16 + `)?\:\:` + ls32 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,5}` + h16 + `)?\:\:` + h16 + `)` +
-		`|(?:(?:(?:` + h16 + `\:){0,6}` + h16 + `)?\:\:)` +
-		`)`
-
-	h16         = `(?:` + hex + `{1,4})`
-	ls32        = `(?:` + h16 + `\:` + h16 + `|` + ipV4Address + `)`
-	ipV4Address = `(?:` + decOctet + `.` + decOctet + `.` + decOctet + `.` + decOctet + `)`
-
-	decOctet = `(?:\d` + `|` + // 0-9
-		`[1-9]\d` + `|` + // 10-99
-		`1\d\d` + `|` + // 100-199
-		`2[0-4]\d` + `|` + // 200-249
-		`25[0-5]` + `)` // 250-255
-)
-
-var (
-	schemeRE            = mustCompileNamed("schemeRE", "^"+scheme+"$")
-	iauthorityRE        = mustCompileNamed("iauthorityRE", "^"+iauthority+"$")
-	iauthorityCaptureRE = mustCompileNamed("iauthorityCaptureRE", "^"+iauthorityCapture+"$")
-	ipathRE             = mustCompileNamed("ipath", "^"+ipath+"$")
-	iqueryRE            = mustCompileNamed("iquery", "^"+iquery+"$")
-	ifragmentRE         = mustCompileNamed("ifragment", "^"+ifragment+"$")
-
-	pctEncodedCharOneOrMore = mustCompileNamed("pctEncodedOneOrMore", pctEncodedOneOrMore)
-	iunreservedRE           = mustCompileNamed("iunreservedRE", "^"+iunreserved+"$")
-
-	hexToByte = func() map[string]byte {
-		m := map[string]byte{}
-		for i := 0; i <= 255; i++ {
-			m[fmt.Sprintf("%02X", i)] = byte(i)
-		}
-		return m
-	}()
-	byteToUppercasePercentEncoding = func() map[byte]string {
-		m := map[byte]string{}
-		for i := 0; i <= 255; i++ {
-			m[byte(i)] = fmt.Sprintf("%%%02X", i)
-		}
-		return m
-	}()
-
-	// re from RFC 3986 page 50.
-	uriRE                             = mustCompileNamed("uriRE", `^(([^:/?#]+):)?(//([^/?#]*))?([^?#]*)(\?([^#]*))?(#(.*))?`)
-	uriRESchemeGroup                  = 2
-	uriREAuthorityWithSlashSlashGroup = 3
-	uriREAuthorityGroup               = 4
-	uriREPathGroup                    = 5
-	uriREQueryWithMarkGroup           = 6
-	uriREQueryGroup                   = 7
-	uriREFragmentGroup                = 9
-	uriREFragmentWithHashGroup        = 8
-)
 
 // NormalizePercentEncoding returns an IRI that replaces any unnecessarily
 // percent-escaped characters with unescaped characters.
@@ -290,6 +149,12 @@ func NormalizePercentEncoding(iri IRI) (IRI, error) {
 	return replaced, nil
 }
 
+// normalizePercentEncoding replaces unreserved percent-encoded characters with their equivalent.
+//
+// Normalization background reading:
+// - https://blog.golang.org/normalization
+// - https://www.ietf.org/rfc/rfc3987.html#section-5
+//   - https://www.ietf.org/rfc/rfc3987.html#section-5.3.2.3 - percent encoding
 func normalizePercentEncoding(in string) (string, error) {
 	var errs []error
 	replaced := pctEncodedCharOneOrMore.ReplaceAllStringFunc(in, func(pctEscaped string) string {
@@ -314,6 +179,23 @@ func normalizePercentEncoding(in string) (string, error) {
 	return replaced, nil
 }
 
+var (
+	hexToByte = func() map[string]byte {
+		m := map[string]byte{}
+		for i := 0; i <= 255; i++ {
+			m[fmt.Sprintf("%02X", i)] = byte(i)
+		}
+		return m
+	}()
+	byteToUppercasePercentEncoding = func() map[byte]string {
+		m := map[byte]string{}
+		for i := 0; i <= 255; i++ {
+			m[byte(i)] = fmt.Sprintf("%%%02X", i)
+		}
+		return m
+	}()
+)
+
 func octetsFrom(percentEncoded string) []byte {
 	octets := make([]byte, len(percentEncoded)/3)
 	for i := 0; i < len(octets); i++ {
@@ -337,12 +219,4 @@ func toUnreservedString(r rune) string {
 		percentEncoded += byteToUppercasePercentEncoding[buf[i]]
 	}
 	return percentEncoded
-}
-
-func mustCompileNamed(name, expr string) *regexp.Regexp {
-	c, err := regexp.Compile(expr)
-	if err != nil {
-		panic(fmt.Errorf("failed to compile regexp %s: %w", name, err))
-	}
-	return c
 }
