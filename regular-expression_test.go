@@ -1,9 +1,25 @@
 package iri
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
 	"testing"
 )
+
+func TestMustCompileNamedPanics(t *testing.T) {
+	defer func() {
+		if p := recover(); p != nil {
+			got := fmt.Sprintf("%v", p)
+			if !strings.HasPrefix(got, "failed to compile regexp example:") {
+				t.Errorf("expected specific panic text. got: '%s'", got)
+			}
+		} else {
+			t.Errorf("expected panic")
+		}
+	}()
+	mustCompileNamed("example", "[")
+}
 
 func TestRegExps(t *testing.T) {
 	tests := []struct {
