@@ -6,7 +6,7 @@ import (
 	"github.com/contomap/iri"
 )
 
-func TestIRI_NormalizePercentEncoding(t *testing.T) {
+func TestNormalizePercentEncoding(t *testing.T) {
 	tt := []struct {
 		name string
 		in   string
@@ -28,9 +28,29 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 			want: `https://é.example.org`,
 		},
 		{
+			name: "encoded userinfo",
+			in:   `https://%c2%B5@example.org`,
+			want: `https://µ@example.org`,
+		},
+		{
+			name: "encoded host",
+			in:   `https://%c2%B5.example.org`,
+			want: `https://µ.example.org`,
+		},
+		{
 			name: "Preserve percent encoding when it is necessary",
 			in:   `https://é.example.org/dog%20house/%c2%B5`,
 			want: `https://é.example.org/dog%20house/µ`,
+		},
+		{
+			name: "encoded query",
+			in:   `https://example.org?q=%c2%B5`,
+			want: `https://example.org?q=µ`,
+		},
+		{
+			name: "encoded fragment",
+			in:   `https://example.org#%c2%B5`,
+			want: `https://example.org#µ`,
 		},
 		{
 			name: "Example from https://github.com/google/xtoproto/issues/23",
@@ -46,8 +66,7 @@ func TestIRI_NormalizePercentEncoding(t *testing.T) {
 			if err != nil {
 				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
 			}
-			// TODO (type-rework) Parse() already normalizes -- extract test; also: add cases for non-path encoding
-			if got := in.NormalizePercentEncoding(); got.String() != tc.want {
+			if got, _ := iri.NormalizePercentEncoding(in); got.String() != tc.want {
 				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
 			}
 		})

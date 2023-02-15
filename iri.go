@@ -77,7 +77,7 @@ func Parse(s string) (IRI, error) {
 		Fragment:      match[uriREFragmentGroup],
 	}
 
-	if _, err := parsed.normalizePercentEncoding(); err != nil {
+	if _, err := NormalizePercentEncoding(parsed); err != nil {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid percent encoding: %w", s, err)
 	}
 
@@ -235,7 +235,6 @@ var (
 	iqueryRE            = mustCompileNamed("iquery", "^"+iquery+"$")
 	ifragmentRE         = mustCompileNamed("ifragment", "^"+ifragment+"$")
 
-	percentEncodedChar      = mustCompileNamed("percentEncodedChar", pctEncoded)
 	pctEncodedCharOneOrMore = mustCompileNamed("pctEncodedOneOrMore", pctEncodedOneOrMore)
 	iunreservedRE           = mustCompileNamed("iunreservedRE", "^"+iunreserved+"$")
 
@@ -271,27 +270,42 @@ var (
 //
 // RFC3987 discusses this normalization procedure in 5.3.2.3:
 // https://www.ietf.org/rfc/rfc3987.html#section-5.3.2.3.
-func (iri IRI) NormalizePercentEncoding() IRI {
-	normalized, err := iri.normalizePercentEncoding()
+func NormalizePercentEncoding(iri IRI) (IRI, error) {
+	replaced := iri
+	var err error
+	replaced.UserInfo, err = normalizePercentEncoding(iri.UserInfo)
 	if err != nil {
-		return iri
+		return IRI{}, err
 	}
-	return normalized
+	replaced.Host, err = normalizePercentEncoding(iri.Host)
+	if err != nil {
+		return IRI{}, err
+	}
+	replaced.Path, err = normalizePercentEncoding(iri.Path)
+	if err != nil {
+		return IRI{}, err
+	}
+	replaced.Query, err = normalizePercentEncoding(iri.Query)
+	if err != nil {
+		return IRI{}, err
+	}
+	replaced.Fragment, err = normalizePercentEncoding(iri.Fragment)
+	if err != nil {
+		return IRI{}, err
+	}
+	return replaced, nil
 }
 
-func (iri IRI) normalizePercentEncoding() (IRI, error) {
+func normalizePercentEncoding(in string) (string, error) {
 	var errs []error
-	replaced := iri
-	// TODO (type-rework) - figure out if only the Path component needs replacing (probably not - think of user names; tests are green however)
-	// Find consecutive percent-encoded octets and encode them together.
-	replaced.Path = pctEncodedCharOneOrMore.ReplaceAllStringFunc(iri.Path, func(pctEscaped string) string {
+	replaced := pctEncodedCharOneOrMore.ReplaceAllStringFunc(in, func(pctEscaped string) string {
 		normalized := ""
 		unconsumedOctets := octetsFrom(pctEscaped)
 		octetsOffset := 0
 		for len(unconsumedOctets) > 0 {
 			codePoint, size := utf8.DecodeRune(unconsumedOctets)
 			if codePoint == utf8.RuneError {
-				errs = append(errs, fmt.Errorf("percent-encoded sequence %q  contains invalid UTF-8 code point at start of byte sequence %+v", pctEscaped[octetsOffset*3:], unconsumedOctets))
+				errs = append(errs, fmt.Errorf("percent-encoded sequence %q contains invalid UTF-8 code point at start", pctEscaped[octetsOffset*3:]))
 				return pctEscaped
 			}
 			normalized += toUnreservedString(codePoint)
@@ -301,7 +315,7 @@ func (iri IRI) normalizePercentEncoding() (IRI, error) {
 		return normalized
 	})
 	if len(errs) != 0 {
-		return IRI{}, errs[0]
+		return "", errs[0]
 	}
 	return replaced, nil
 }
