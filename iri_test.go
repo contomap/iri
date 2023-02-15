@@ -6,73 +6,6 @@ import (
 	"github.com/contomap/iri"
 )
 
-func TestNormalizePercentEncoding(t *testing.T) {
-	tt := []struct {
-		name string
-		in   string
-		want string
-	}{
-		{
-			name: "a",
-			in:   `https://github.com/google/xtoproto/testing#prop1`,
-			want: "https://github.com/google/xtoproto/testing#prop1",
-		},
-		{
-			name: "b",
-			in:   `https://github.com/google/xtoproto/testing#prop1`,
-			want: "https://github.com/google/xtoproto/testing#prop1",
-		},
-		{
-			name: "non ascii é",
-			in:   `https://é.example.org`,
-			want: `https://é.example.org`,
-		},
-		{
-			name: "encoded userinfo",
-			in:   `https://%c2%B5@example.org`,
-			want: `https://µ@example.org`,
-		},
-		{
-			name: "encoded host",
-			in:   `https://%c2%B5.example.org`,
-			want: `https://µ.example.org`,
-		},
-		{
-			name: "Preserve percent encoding when it is necessary",
-			in:   `https://é.example.org/dog%20house/%c2%B5`,
-			want: `https://é.example.org/dog%20house/µ`,
-		},
-		{
-			name: "encoded query",
-			in:   `https://example.org?q=%c2%B5`,
-			want: `https://example.org?q=µ`,
-		},
-		{
-			name: "encoded fragment",
-			in:   `https://example.org#%c2%B5`,
-			want: `https://example.org#µ`,
-		},
-		{
-			name: "Example from https://github.com/google/xtoproto/issues/23",
-			in:   "https://wiktionary.org/wiki/%E1%BF%AC%CF%8C%CE%B4%CE%BF%CF%82",
-			want: `https://wiktionary.org/wiki/Ῥόδος`,
-		},
-	}
-	for _, tc := range tt {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			in, err := iri.Parse(tc.in)
-			if err != nil {
-				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
-			}
-			if got, _ := iri.NormalizePercentEncoding(in); got.String() != tc.want {
-				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
-			}
-		})
-	}
-}
-
 func TestParse(t *testing.T) {
 	tt := []struct {
 		name    string
@@ -149,75 +82,6 @@ func TestParse(t *testing.T) {
 			}
 			if got.String() != tc.want {
 				t.Errorf("Parse(%q) got %s, want %s", tc.in, got, tc.want)
-			}
-		})
-	}
-}
-
-func TestResolveReference(t *testing.T) {
-	tt := []struct {
-		name      string
-		base, ref string
-		want      string
-	}{
-		{
-			name: "prop1",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `#3`,
-			want: "https://github.com/google/xtoproto/testing#3",
-		},
-		{
-			name: "slash blah",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `/blah`,
-			want: "https://github.com/blah",
-		},
-		{
-			name: "empty ref",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  ``,
-			want: "https://github.com/google/xtoproto/testing#prop1",
-		},
-		{
-			name: "different full iri",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `http://x`,
-			want: "http://x",
-		},
-		{
-			name: "blank fragment",
-			base: `https://github.com/google/xtoproto/testing`,
-			ref:  `#`,
-			want: "https://github.com/google/xtoproto/testing#",
-		},
-		{
-			name: "replace completely",
-			base: "https://red@google.com:341",
-			ref:  `https://example/q?abc=1&def=2`,
-			want: `https://example/q?abc=1&def=2`,
-		},
-		// {
-		// 	name: "An empty same document reference \"\" resolves against the URI part of the base URI; any fragment part is ignored. See Uniform Resource Identifiers (URI) [RFC3986]",
-		// 	base: "http://bigbird@google.com/path#x-frag",
-		// 	ref:  ``,
-		// 	want: `http://bigbird@google.com/path`,
-		// },
-	}
-	for _, tc := range tt {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
-			base, err := iri.Parse(tc.base)
-			if err != nil {
-				t.Errorf("base IRI %s is not a valid IRI: %v", tc.base, err)
-			}
-			ref, err := iri.Parse(tc.ref)
-			if err != nil {
-				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
-			}
-			got := base.ResolveReference(ref).String()
-			if got != tc.want {
-				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tc.base, tc.ref, got, tc.want)
 			}
 		})
 	}
@@ -303,7 +167,141 @@ func TestStringFromCreatedObject(t *testing.T) {
 	}
 }
 
-type verifyFunc func(testing.TB, iri.IRI)
+func TestNormalizePercentEncoding(t *testing.T) {
+	tt := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "a",
+			in:   `https://github.com/google/xtoproto/testing#prop1`,
+			want: "https://github.com/google/xtoproto/testing#prop1",
+		},
+		{
+			name: "b",
+			in:   `https://github.com/google/xtoproto/testing#prop1`,
+			want: "https://github.com/google/xtoproto/testing#prop1",
+		},
+		{
+			name: "non ascii é",
+			in:   `https://é.example.org`,
+			want: `https://é.example.org`,
+		},
+		{
+			name: "encoded userinfo",
+			in:   `https://%c2%B5@example.org`,
+			want: `https://µ@example.org`,
+		},
+		{
+			name: "encoded host",
+			in:   `https://%c2%B5.example.org`,
+			want: `https://µ.example.org`,
+		},
+		{
+			name: "Preserve percent encoding when it is necessary",
+			in:   `https://é.example.org/dog%20house/%c2%B5`,
+			want: `https://é.example.org/dog%20house/µ`,
+		},
+		{
+			name: "encoded query",
+			in:   `https://example.org?q=%c2%B5`,
+			want: `https://example.org?q=µ`,
+		},
+		{
+			name: "encoded fragment",
+			in:   `https://example.org#%c2%B5`,
+			want: `https://example.org#µ`,
+		},
+		{
+			name: "Example from https://github.com/google/xtoproto/issues/23",
+			in:   "https://wiktionary.org/wiki/%E1%BF%AC%CF%8C%CE%B4%CE%BF%CF%82",
+			want: `https://wiktionary.org/wiki/Ῥόδος`,
+		},
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			in, err := iri.Parse(tc.in)
+			if err != nil {
+				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
+			}
+			if got, _ := iri.NormalizePercentEncoding(in); got.String() != tc.want {
+				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveReference(t *testing.T) {
+	tt := []struct {
+		name      string
+		base, ref string
+		want      string
+	}{
+		{
+			name: "prop1",
+			base: `https://github.com/google/xtoproto/testing#prop1`,
+			ref:  `#3`,
+			want: "https://github.com/google/xtoproto/testing#3",
+		},
+		{
+			name: "slash blah",
+			base: `https://github.com/google/xtoproto/testing#prop1`,
+			ref:  `/blah`,
+			want: "https://github.com/blah",
+		},
+		{
+			name: "empty ref",
+			base: `https://github.com/google/xtoproto/testing#prop1`,
+			ref:  ``,
+			want: "https://github.com/google/xtoproto/testing#prop1",
+		},
+		{
+			name: "different full iri",
+			base: `https://github.com/google/xtoproto/testing#prop1`,
+			ref:  `http://x`,
+			want: "http://x",
+		},
+		{
+			name: "blank fragment",
+			base: `https://github.com/google/xtoproto/testing`,
+			ref:  `#`,
+			want: "https://github.com/google/xtoproto/testing#",
+		},
+		{
+			name: "replace completely",
+			base: "https://red@google.com:341",
+			ref:  `https://example/q?abc=1&def=2`,
+			want: `https://example/q?abc=1&def=2`,
+		},
+		// {
+		// 	name: "An empty same document reference \"\" resolves against the URI part of the base URI; any fragment part is ignored. See Uniform Resource Identifiers (URI) [RFC3986]",
+		// 	base: "http://bigbird@google.com/path#x-frag",
+		// 	ref:  ``,
+		// 	want: `http://bigbird@google.com/path`,
+		// },
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			base, err := iri.Parse(tc.base)
+			if err != nil {
+				t.Errorf("base IRI %s is not a valid IRI: %v", tc.base, err)
+			}
+			ref, err := iri.Parse(tc.ref)
+			if err != nil {
+				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+			}
+			got := base.ResolveReference(ref).String()
+			if got != tc.want {
+				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tc.base, tc.ref, got, tc.want)
+			}
+		})
+	}
+}
 
 func TestProperties(t *testing.T) {
 	tt := []struct {
@@ -380,6 +378,8 @@ func TestProperties(t *testing.T) {
 		})
 	}
 }
+
+type verifyFunc func(testing.TB, iri.IRI)
 
 func hasScheme(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
