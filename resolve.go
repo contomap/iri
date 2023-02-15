@@ -36,45 +36,30 @@ package iri
 import "strings"
 
 func resolveReference(base, ref IRI) IRI {
-	refFrag, refHasFrag := ref.Fragment, ref.ForceFragment || ref.Fragment != ""
-	refQuery, refHasQuery := ref.Query, ref.ForceQuery || ref.Query != ""
-	// TODO (type-rework) handle ForceUserInfo
-	res := IRI{
-		Scheme:        ref.Scheme,
-		EmptyAuth:     ref.EmptyAuth && ref.Host == "" && ref.UserInfo == "",
-		UserInfo:      ref.UserInfo,
-		Host:          ref.Host,
-		Path:          ref.Path,
-		ForceQuery:    refQuery == "" && refHasQuery,
-		Query:         ref.Query,
-		ForceFragment: refFrag == "" && refHasFrag,
-		Fragment:      refFrag,
+	result := ref
+	if ref.hasScheme() {
+		result.Path = resolvePath(ref.Path, "")
+		return result
 	}
-	if ref.Scheme == "" {
-		res.Scheme = base.Scheme
+	result.Scheme = base.Scheme
+	if ref.hasAuthority() {
+		result.Path = resolvePath(ref.Path, "")
+		return result
 	}
-	if ref.Scheme != "" || ref.Host != "" || ref.UserInfo != "" {
-		// The "absoluteURI" or "net_path" cases.
-		// We can ignore the error from setPath since we know we provided a
-		// validly-escaped path.
-		res.Path = resolvePath(ref.Path, "")
-		return res
+	result.ForceAuthority = base.ForceAuthority
+	result.Authority = base.Authority
+	result.Path = resolvePath(base.Path, ref.Path)
+	if ref.hasQuery() || (ref.Path != "") {
+		return result
 	}
-	if res.Path == "" && ref.Query == "" {
-		res.Query = base.Query
-		res.ForceQuery = base.ForceQuery
-
-		if !refHasFrag {
-			baseFrag, baseHasFrag := base.Fragment, base.ForceFragment || base.Fragment != ""
-			res.Fragment = baseFrag
-			res.ForceFragment = baseFrag == "" && baseHasFrag
-		}
+	result.ForceQuery = base.ForceQuery
+	result.Query = base.Query
+	if ref.hasFragment() {
+		return result
 	}
-	// The "abs_path" or "rel_path" cases.
-	res.Host = base.Host
-	res.UserInfo = base.UserInfo
-	res.Path = resolvePath(base.Path, ref.Path)
-	return res
+	result.ForceFragment = base.ForceFragment
+	result.Fragment = base.Fragment
+	return result
 }
 
 // resolvePath applies special path segments from refs and applies

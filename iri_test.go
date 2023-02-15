@@ -311,52 +311,52 @@ func TestProperties(t *testing.T) {
 		{in: "", verify: is(iri.IRI{})},
 		{in: "test:", verify: hasScheme("test")},
 		{in: "test:example.com:1234", verify: hasScheme("test")},
-		{in: "//example.com:1234", verify: allOf(hasScheme(""), hasHost("example.com:1234"))},
-		{in: "https://user:pwd@example.com", verify: allOf(hasScheme("https"), hasUser("user:pwd"), hasHost("example.com"))},
-		{in: "https://@example.com", verify: allOf(hasScheme("https"), hasUser(""), hasHost("example.com"))},
+		{in: "//example.com:1234", verify: allOf(hasScheme(""), hasAuthority("example.com:1234"))},
+		{in: "https://user:pwd@example.com", verify: allOf(hasScheme("https"), hasAuthority("user:pwd@example.com"))},
+		{in: "https://@example.com", verify: allOf(hasScheme("https"), hasAuthority("@example.com"))},
 
-		{in: "//[2001:db8:3333:4444:5555:6666:7777:8888]", verify: hasHost("[2001:db8:3333:4444:5555:6666:7777:8888]")},
-		{in: "//[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]", verify: hasHost("[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]")},
-		{in: "//[2001:db8::]", verify: hasHost("[2001:db8::]")},
-		{in: "//[::1234:5678]", verify: hasHost("[::1234:5678]")},
-		{in: "//[2001:db8::1234:5678]", verify: hasHost("[2001:db8::1234:5678]")},
-		{in: "//[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]", verify: hasHost("[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]")},
-		{in: "//[2001:db8:1::ab9:C0A8:102]", verify: hasHost("[2001:db8:1::ab9:C0A8:102]")},
+		{in: "//[2001:db8:3333:4444:5555:6666:7777:8888]", verify: hasAuthority("[2001:db8:3333:4444:5555:6666:7777:8888]")},
+		{in: "//[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]", verify: hasAuthority("[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]")},
+		{in: "//[2001:db8::]", verify: hasAuthority("[2001:db8::]")},
+		{in: "//[::1234:5678]", verify: hasAuthority("[::1234:5678]")},
+		{in: "//[2001:db8::1234:5678]", verify: hasAuthority("[2001:db8::1234:5678]")},
+		{in: "//[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]", verify: hasAuthority("[2001:0db8:0001:0000:0000:0ab9:C0A8:0102]")},
+		{in: "//[2001:db8:1::ab9:C0A8:102]", verify: hasAuthority("[2001:db8:1::ab9:C0A8:102]")},
 
-		{in: "//[2001:db8:3333:4444:5555:6666:1.2.3.4]", verify: hasHost("[2001:db8:3333:4444:5555:6666:1.2.3.4]")},
-		{in: "//[::11.22.33.44]", verify: hasHost("[::11.22.33.44]")},
-		{in: "//[2001:db8::123.123.123.123]", verify: hasHost("[2001:db8::123.123.123.123]")},
-		{in: "//[::1234:5678:91.123.4.56]", verify: hasHost("[::1234:5678:91.123.4.56]")},
-		{in: "//[::1234:5678:1.2.3.4]", verify: hasHost("[::1234:5678:1.2.3.4]")},
-		{in: "//[2001:db8::1234:5678:5.6.7.8]", verify: hasHost("[2001:db8::1234:5678:5.6.7.8]")},
+		{in: "//[2001:db8:3333:4444:5555:6666:1.2.3.4]", verify: hasAuthority("[2001:db8:3333:4444:5555:6666:1.2.3.4]")},
+		{in: "//[::11.22.33.44]", verify: hasAuthority("[::11.22.33.44]")},
+		{in: "//[2001:db8::123.123.123.123]", verify: hasAuthority("[2001:db8::123.123.123.123]")},
+		{in: "//[::1234:5678:91.123.4.56]", verify: hasAuthority("[::1234:5678:91.123.4.56]")},
+		{in: "//[::1234:5678:1.2.3.4]", verify: hasAuthority("[::1234:5678:1.2.3.4]")},
+		{in: "//[2001:db8::1234:5678:5.6.7.8]", verify: hasAuthority("[2001:db8::1234:5678:5.6.7.8]")},
 
-		{in: "//[::2:3:4:5:6:7:8]", verify: hasHost("[::2:3:4:5:6:7:8]")},
-		{in: "//[::3:4:5:6:7:8]", verify: hasHost("[::3:4:5:6:7:8]")},
-		{in: "//[::4:5:6:7:8]", verify: hasHost("[::4:5:6:7:8]")},
-		{in: "//[::5:6:7:8]", verify: hasHost("[::5:6:7:8]")},
-		{in: "//[::6:7:8]", verify: hasHost("[::6:7:8]")},
-		{in: "//[::7:8]", verify: hasHost("[::7:8]")},
-		{in: "//[::8]", verify: hasHost("[::8]")},
-		{in: "//[::]", verify: hasHost("[::]")},
-		{in: "//[7::]", verify: hasHost("[7::]")},
-		{in: "//[6:7::]", verify: hasHost("[6:7::]")},
-		{in: "//[5:6:7::]", verify: hasHost("[5:6:7::]")},
-		{in: "//[4:5:6:7::]", verify: hasHost("[4:5:6:7::]")},
-		{in: "//[3:4:5:6:7::]", verify: hasHost("[3:4:5:6:7::]")},
-		{in: "//[2:3:4:5:6:7::]", verify: hasHost("[2:3:4:5:6:7::]")},
-		{in: "//[2:3:4:5:6:7::]", verify: hasHost("[2:3:4:5:6:7::]")},
-		{in: "//[1:2:3:4:5:6:7::]", verify: hasHost("[1:2:3:4:5:6:7::]")},
-		{in: "//[1:2:3:4:5:6::8]", verify: hasHost("[1:2:3:4:5:6::8]")},
-		{in: "//[1:2:3:4:5::7:8]", verify: hasHost("[1:2:3:4:5::7:8]")},
-		{in: "//[1:2:3:4::6:7:8]", verify: hasHost("[1:2:3:4::6:7:8]")},
-		{in: "//[1:2:3::5:6:7:8]", verify: hasHost("[1:2:3::5:6:7:8]")},
-		{in: "//[1:2::4:5:6:7:8]", verify: hasHost("[1:2::4:5:6:7:8]")},
-		{in: "//[1::3:4:5:6:7:8]", verify: hasHost("[1::3:4:5:6:7:8]")},
-		{in: "//[1::4:5:6:7:8]", verify: hasHost("[1::4:5:6:7:8]")},
-		{in: "//[1::5:6:7:8]", verify: hasHost("[1::5:6:7:8]")},
-		{in: "//[1::6:7:8]", verify: hasHost("[1::6:7:8]")},
-		{in: "//[1::7:8]", verify: hasHost("[1::7:8]")},
-		{in: "//[1::8]", verify: hasHost("[1::8]")},
+		{in: "//[::2:3:4:5:6:7:8]", verify: hasAuthority("[::2:3:4:5:6:7:8]")},
+		{in: "//[::3:4:5:6:7:8]", verify: hasAuthority("[::3:4:5:6:7:8]")},
+		{in: "//[::4:5:6:7:8]", verify: hasAuthority("[::4:5:6:7:8]")},
+		{in: "//[::5:6:7:8]", verify: hasAuthority("[::5:6:7:8]")},
+		{in: "//[::6:7:8]", verify: hasAuthority("[::6:7:8]")},
+		{in: "//[::7:8]", verify: hasAuthority("[::7:8]")},
+		{in: "//[::8]", verify: hasAuthority("[::8]")},
+		{in: "//[::]", verify: hasAuthority("[::]")},
+		{in: "//[7::]", verify: hasAuthority("[7::]")},
+		{in: "//[6:7::]", verify: hasAuthority("[6:7::]")},
+		{in: "//[5:6:7::]", verify: hasAuthority("[5:6:7::]")},
+		{in: "//[4:5:6:7::]", verify: hasAuthority("[4:5:6:7::]")},
+		{in: "//[3:4:5:6:7::]", verify: hasAuthority("[3:4:5:6:7::]")},
+		{in: "//[2:3:4:5:6:7::]", verify: hasAuthority("[2:3:4:5:6:7::]")},
+		{in: "//[2:3:4:5:6:7::]", verify: hasAuthority("[2:3:4:5:6:7::]")},
+		{in: "//[1:2:3:4:5:6:7::]", verify: hasAuthority("[1:2:3:4:5:6:7::]")},
+		{in: "//[1:2:3:4:5:6::8]", verify: hasAuthority("[1:2:3:4:5:6::8]")},
+		{in: "//[1:2:3:4:5::7:8]", verify: hasAuthority("[1:2:3:4:5::7:8]")},
+		{in: "//[1:2:3:4::6:7:8]", verify: hasAuthority("[1:2:3:4::6:7:8]")},
+		{in: "//[1:2:3::5:6:7:8]", verify: hasAuthority("[1:2:3::5:6:7:8]")},
+		{in: "//[1:2::4:5:6:7:8]", verify: hasAuthority("[1:2::4:5:6:7:8]")},
+		{in: "//[1::3:4:5:6:7:8]", verify: hasAuthority("[1::3:4:5:6:7:8]")},
+		{in: "//[1::4:5:6:7:8]", verify: hasAuthority("[1::4:5:6:7:8]")},
+		{in: "//[1::5:6:7:8]", verify: hasAuthority("[1::5:6:7:8]")},
+		{in: "//[1::6:7:8]", verify: hasAuthority("[1::6:7:8]")},
+		{in: "//[1::7:8]", verify: hasAuthority("[1::7:8]")},
+		{in: "//[1::8]", verify: hasAuthority("[1::8]")},
 
 		{in: "tel:7042;phone-context=example.com", verify: allOf(hasScheme("tel"), hasPath("7042;phone-context=example.com"))},
 		{in: "email:user@example.com", verify: allOf(hasScheme("email"), hasPath("user@example.com"))},
@@ -389,17 +389,9 @@ func hasScheme(expected string) verifyFunc {
 	}
 }
 
-func hasUser(expected string) verifyFunc {
+func hasAuthority(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
-		if got.UserInfo != expected {
-			t.Errorf("invalid user info. want: '%v'", expected)
-		}
-	}
-}
-
-func hasHost(expected string) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
-		if got.Host != expected {
+		if got.Authority != expected {
 			t.Errorf("invalid host. want: '%v'", expected)
 		}
 	}

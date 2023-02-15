@@ -11,16 +11,14 @@ import (
 //
 // See https://www.ietf.org/rfc/rfc3987.html
 type IRI struct {
-	Scheme        string
-	EmptyAuth     bool // true if the IRI is something like `///path`
-	ForceUserInfo bool // append an at ('@') even if UserInfo is empty
-	UserInfo      string
-	Host          string // host including port information
-	Path          string
-	ForceQuery    bool // append a query ('?') even if Query is empty
-	Query         string
-	ForceFragment bool // append a fragment ('#') even if Fragment field is empty
-	Fragment      string
+	Scheme         string
+	ForceAuthority bool // append a double-slash ('//') even if Authority is empty
+	Authority      string
+	Path           string
+	ForceQuery     bool // append a query ('?') even if Query is empty
+	Query          string
+	ForceFragment  bool // append a fragment ('#') even if Fragment field is empty
+	Fragment       string
 }
 
 // Parse parses a string into an IRI and checks that it conforms to RFC 3987.
@@ -36,15 +34,15 @@ func Parse(s string) (IRI, error) {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI - does not match regexp %s", s, uriRE)
 	}
 	scheme := match[uriRESchemeGroup]
-	auth := match[uriREAuthorityGroup]
+	authority := match[uriREAuthorityGroup]
 	path := match[uriREPathGroup]
 	query := match[uriREQueryGroup]
 	fragment := match[uriREFragmentGroup]
 	if scheme != "" && !schemeRE.MatchString(scheme) {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid scheme %q does not match regexp %s", s, scheme, schemeRE)
 	}
-	if auth != "" && !iauthorityRE.MatchString(auth) {
-		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid auth %q does not match regexp %s", s, auth, iauthorityRE)
+	if authority != "" && !iauthorityRE.MatchString(authority) {
+		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid authority %q does not match regexp %s", s, authority, iauthorityRE)
 	}
 	if path != "" && !ipathRE.MatchString(path) {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid path %q does not match regexp %s", s, path, ipathRE)
@@ -56,25 +54,15 @@ func Parse(s string) (IRI, error) {
 		return IRI{}, fmt.Errorf("%q is not a valid IRI: invalid fragment %q does not match regexp %s", s, fragment, ifragmentRE)
 	}
 
-	authMatch := iauthorityCaptureRE.FindStringSubmatch(auth)
-	var userInfo, host string
-	var forceUserInfo bool
-	if len(authMatch) != 0 {
-		forceUserInfo = authMatch[iauthorityUserInfoWithAtGroup] != ""
-		userInfo = authMatch[iauthorityUserInfoGroup]
-		host = authMatch[iauthorityHostPortGroup]
-	}
 	parsed := IRI{
-		Scheme:        scheme,
-		EmptyAuth:     len(match[uriREAuthorityWithSlashSlashGroup]) != 0 && (userInfo == "" && host == ""),
-		ForceUserInfo: forceUserInfo,
-		UserInfo:      userInfo,
-		Host:          host,
-		Path:          path,
-		ForceQuery:    match[uriREQueryWithMarkGroup] != "",
-		Query:         query,
-		ForceFragment: match[uriREFragmentWithHashGroup] != "",
-		Fragment:      fragment,
+		Scheme:         scheme,
+		ForceAuthority: len(match[uriREAuthorityWithSlashSlashGroup]) != 0,
+		Authority:      authority,
+		Path:           path,
+		ForceQuery:     match[uriREQueryWithMarkGroup] != "",
+		Query:          query,
+		ForceFragment:  match[uriREFragmentWithHashGroup] != "",
+		Fragment:       fragment,
 	}
 
 	if _, err := NormalizePercentEncoding(parsed); err != nil {
@@ -85,32 +73,34 @@ func Parse(s string) (IRI, error) {
 }
 
 // String reassembles the IRI into an IRI string.
-// Any components that have been manually set must comply to the format; This function performs no further escaping.
+// Any components that have been manually set must comply to the format;
+// This function performs no further escaping.
 func (iri IRI) String() string {
-	s := ""
-	if iri.Scheme != "" {
-		s += iri.Scheme + ":"
+	var result strings.Builder
+	if iri.hasScheme() {
+		result.WriteString(iri.Scheme)
+		result.WriteRune(':')
 	}
-	if iri.EmptyAuth || iri.UserInfo != "" || iri.Host != "" {
-		s += "//"
+	if iri.hasAuthority() {
+		result.WriteString("//")
+		result.WriteString(iri.Authority)
 	}
-	if iri.ForceUserInfo || (iri.UserInfo != "") {
-		s += iri.UserInfo + "@"
+	result.WriteString(iri.Path)
+	if iri.hasQuery() {
+		result.WriteRune('?')
+		result.WriteString(iri.Query)
 	}
-	if iri.Host != "" {
-		s += iri.Host
+	if iri.hasFragment() {
+		result.WriteRune('#')
+		result.WriteString(iri.Fragment)
 	}
-	if iri.Path != "" {
-		s += iri.Path
-	}
-	if iri.ForceQuery || (iri.Query != "") {
-		s += "?" + iri.Query
-	}
-	if iri.ForceFragment || (iri.Fragment != "") {
-		s += "#" + iri.Fragment
-	}
-	return s
+	return result.String()
 }
+
+func (iri IRI) hasScheme() bool    { return iri.Scheme != "" }
+func (iri IRI) hasAuthority() bool { return iri.ForceAuthority || iri.Authority != "" }
+func (iri IRI) hasQuery() bool     { return iri.ForceQuery || iri.Query != "" }
+func (iri IRI) hasFragment() bool  { return iri.ForceFragment || iri.Fragment != "" }
 
 // ResolveReference resolves an IRI reference to an absolute IRI from an absolute
 // base IRI u, per RFC 3986 Section 5.2. The IRI reference may be relative or absolute.
@@ -126,11 +116,7 @@ func (iri IRI) ResolveReference(other IRI) IRI {
 func NormalizePercentEncoding(iri IRI) (IRI, error) {
 	replaced := iri
 	var err error
-	replaced.UserInfo, err = normalizePercentEncoding(iri.UserInfo)
-	if err != nil {
-		return IRI{}, err
-	}
-	replaced.Host, err = normalizePercentEncoding(iri.Host)
+	replaced.Authority, err = normalizePercentEncoding(iri.Authority)
 	if err != nil {
 		return IRI{}, err
 	}
