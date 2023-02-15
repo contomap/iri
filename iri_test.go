@@ -159,9 +159,9 @@ func TestStringFromCreatedObject(t *testing.T) {
 			if got != tc.want {
 				t.Errorf("String() mismatch: got: '%s', want: '%s'", got, tc.want)
 			}
-			err := tc.in.Check()
+			_, err := iri.Parse(got)
 			if err != nil {
-				t.Errorf("Check() returned error: %v", err)
+				t.Errorf("Parse(got) returned error: got: '%s', err: %v", got, err)
 			}
 		})
 	}

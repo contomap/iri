@@ -65,16 +65,16 @@ func Parse(s string) (IRI, error) {
 		host = authMatch[iauthorityHostPortGroup]
 	}
 	parsed := IRI{
-		Scheme:        match[uriRESchemeGroup],
+		Scheme:        scheme,
 		EmptyAuth:     len(match[uriREAuthorityWithSlashSlashGroup]) != 0 && (userInfo == "" && host == ""),
 		ForceUserInfo: forceUserInfo,
 		UserInfo:      userInfo,
 		Host:          host,
-		Path:          match[uriREPathGroup],
+		Path:          path,
 		ForceQuery:    match[uriREQueryWithMarkGroup] != "",
-		Query:         match[uriREQueryGroup],
+		Query:         query,
 		ForceFragment: match[uriREFragmentWithHashGroup] != "",
-		Fragment:      match[uriREFragmentGroup],
+		Fragment:      fragment,
 	}
 
 	if _, err := NormalizePercentEncoding(parsed); err != nil {
@@ -82,12 +82,6 @@ func Parse(s string) (IRI, error) {
 	}
 
 	return parsed, nil
-}
-
-// Check returns an error if the IRI is invalid.
-func (iri IRI) Check() error {
-	_, err := Parse(iri.String())
-	return err
 }
 
 // String reassembles the IRI into a valid IRI string.
