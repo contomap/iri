@@ -122,5 +122,5 @@ func resolvePath(base, ref string) string {
 		dst.WriteByte('/')
 	}
 
-	return "/" + strings.TrimPrefix(dst.String(), "/")
+	return dst.String()
 }

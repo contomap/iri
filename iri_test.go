@@ -15,8 +15,8 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name: "prop1",
-			in:   `https://github.com/google/xtoproto/testing#prop1`,
-			want: "https://github.com/google/xtoproto/testing#prop1",
+			in:   `https://example.com/sub/path/testing#frag1`,
+			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "https://example.org/#André",
@@ -175,13 +175,13 @@ func TestNormalizePercentEncoding(t *testing.T) {
 	}{
 		{
 			name: "a",
-			in:   `https://github.com/google/xtoproto/testing#prop1`,
-			want: "https://github.com/google/xtoproto/testing#prop1",
+			in:   `https://example.com/sub/path/testing#frag1`,
+			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "b",
-			in:   `https://github.com/google/xtoproto/testing#prop1`,
-			want: "https://github.com/google/xtoproto/testing#prop1",
+			in:   `https://example.com/sub/path/testing#frag1`,
+			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "non ascii é",
@@ -241,47 +241,91 @@ func TestResolveReference(t *testing.T) {
 		want      string
 	}{
 		{
-			name: "prop1",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `#3`,
-			want: "https://github.com/google/xtoproto/testing#3",
+			name: "different scheme",
+			base: "https://example.com/sub/path/example?q=123#frag1",
+			ref:  "email:user@example.com",
+			want: "email:user@example.com",
 		},
 		{
-			name: "slash blah",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `/blah`,
-			want: "https://github.com/blah",
+			name: "different authority",
+			base: "https://user@example.com?q=123#frag1",
+			ref:  "//example/q?abc=1&def=2",
+			want: "https://example/q?abc=1&def=2",
 		},
 		{
-			name: "empty ref",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  ``,
-			want: "https://github.com/google/xtoproto/testing#prop1",
+			name: "absolute path",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "/abs",
+			want: "https://example.com/abs",
 		},
 		{
-			name: "different full iri",
-			base: `https://github.com/google/xtoproto/testing#prop1`,
-			ref:  `http://x`,
-			want: "http://x",
+			name: "absolute path with details",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "/abs?q=123#frag2",
+			want: "https://example.com/abs?q=123#frag2",
+		},
+		{
+			name: "relative parent path",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "../other",
+			want: "https://example.com/sub/other",
+		},
+		{
+			name: "relative local relative path",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "./here",
+			want: "https://example.com/sub/path/here",
+		},
+		{
+			name: "relative local path",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  ".",
+			want: "https://example.com/sub/path/",
+		},
+		/* TODO (type-rework) - this probably needs to have the "beginning slash" re-introduced, conditionally
+		{
+			name: "relative unavailable path",
+			base: "https://example.com",
+			ref:  "../../nowhere",
+			want: "https://example.com/nowhere",
+		},
+		*/
+		{
+			name: "different query",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "?q2=abc",
+			want: "https://example.com/sub/path/testing?q2=abc",
+		},
+		{
+			name: "different fragment",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "#frag3",
+			want: "https://example.com/sub/path/testing#frag3",
 		},
 		{
 			name: "blank fragment",
-			base: `https://github.com/google/xtoproto/testing`,
-			ref:  `#`,
-			want: "https://github.com/google/xtoproto/testing#",
+			base: "https://example.com/sub/path/testing",
+			ref:  "#",
+			want: "https://example.com/sub/path/testing#",
 		},
 		{
-			name: "replace completely",
-			base: "https://red@google.com:341",
-			ref:  `https://example/q?abc=1&def=2`,
-			want: `https://example/q?abc=1&def=2`,
+			name: "empty ref",
+			base: "https://example.com/sub/path/testing#frag1",
+			ref:  "",
+			want: "https://example.com/sub/path/testing#frag1",
 		},
 		// {
 		// 	name: "An empty same document reference \"\" resolves against the URI part of the base URI; any fragment part is ignored. See Uniform Resource Identifiers (URI) [RFC3986]",
-		// 	base: "http://bigbird@google.com/path#x-frag",
-		// 	ref:  ``,
-		// 	want: `http://bigbird@google.com/path`,
+		// 	base: "http://user@example.com/path#x-frag",
+		// 	ref:  "",
+		// 	want: `http://user@example.com/path`,
 		// },
+		{
+			name: "empty to empty",
+			base: "",
+			ref:  "",
+			want: "",
+		},
 	}
 	for _, tc := range tt {
 		tc := tc
