@@ -50,6 +50,11 @@ func TestParse(t *testing.T) {
 			want: "https://example.org?",
 		},
 		{
+			name: "ignored extra lines",
+			in:   "#f\nignored",
+			want: "#f",
+		},
+		{
 			// This is an "intentional" parse error; It is to showcase that examples from RFC 3987 with XML notation
 			// must not be taken literally. As per chapter 1.4 (page 5), these are meant to escape the "only US-ASCII"
 			// RFC text. This particular example comes from page 12.
