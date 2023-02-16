@@ -71,6 +71,36 @@ func TestParse(t *testing.T) {
 			want:    "",
 			wantErr: true,
 		},
+		{
+			name:    "invalid scheme",
+			in:      " :",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "invalid authority",
+			in:      "//[not-a-v6]",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "invalid path",
+			in:      "/ ",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "invalid query",
+			in:      "? ",
+			want:    "",
+			wantErr: true,
+		},
+		{
+			name:    "invalid fragment",
+			in:      "# ",
+			want:    "",
+			wantErr: true,
+		},
 	}
 	for _, tc := range tt {
 		tc := tc
@@ -257,6 +287,26 @@ func TestNormalizePercentEncoding(t *testing.T) {
 			}
 			if got, _ := iri.NormalizePercentEncoding(in); got.String() != tc.want {
 				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestNormalizePercentEncodingErrors(t *testing.T) {
+	tt := []struct {
+		value iri.IRI
+	}{
+		{value: iri.IRI{Authority: "%FF"}},
+		{value: iri.IRI{Path: "%FF"}},
+		{value: iri.IRI{Query: "%FF"}},
+		{value: iri.IRI{Fragment: "%FF"}},
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.value.String(), func(t *testing.T) {
+			t.Parallel()
+			if _, err := iri.NormalizePercentEncoding(tc.value); err == nil {
+				t.Errorf("Parse() did not return an error")
 			}
 		})
 	}
