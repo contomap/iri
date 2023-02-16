@@ -38,7 +38,6 @@ import "strings"
 func resolveReference(base, ref IRI) IRI {
 	result := ref
 	if ref.hasScheme() {
-		result.Path = resolvePath(ref.Path, "")
 		return result
 	}
 	result.Scheme = base.Scheme
@@ -122,5 +121,5 @@ func resolvePath(base, ref string) string {
 		dst.WriteByte('/')
 	}
 
-	return dst.String()
+	return "/" + strings.TrimPrefix(dst.String(), "/")
 }

@@ -282,14 +282,12 @@ func TestResolveReference(t *testing.T) {
 			ref:  ".",
 			want: "https://example.com/sub/path/",
 		},
-		/* TODO (type-rework) - this probably needs to have the "beginning slash" re-introduced, conditionally
 		{
 			name: "relative unavailable path",
 			base: "https://example.com",
 			ref:  "../../nowhere",
 			want: "https://example.com/nowhere",
 		},
-		*/
 		{
 			name: "different query",
 			base: "https://example.com/sub/path/testing#frag1",
@@ -341,7 +339,81 @@ func TestResolveReference(t *testing.T) {
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference(%s, %s) got\n  %s, want\n  %s", tc.base, tc.ref, got, tc.want)
+				t.Errorf("ResolveReference(%s, %s)\n  got '%s'\n want '%s'", tc.base, tc.ref, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveReferenceRFC3986Samples(t *testing.T) {
+	base, baseErr := iri.Parse("http://a/b/c/d;p?q")
+	if baseErr != nil {
+		t.Fatalf("Base IRI is not correct: %v", baseErr)
+	}
+	tt := []struct {
+		ref  string
+		want string
+	}{
+		// Normal examples as per 5.4.1
+		{ref: "g:h", want: "g:h"},
+		{ref: "g", want: "http://a/b/c/g"},
+		{ref: "./g", want: "http://a/b/c/g"},
+		{ref: "g/", want: "http://a/b/c/g/"},
+		{ref: "/g", want: "http://a/g"},
+		{ref: "//g", want: "http://g"},
+		{ref: "?y", want: "http://a/b/c/d;p?y"},
+		{ref: "g?y", want: "http://a/b/c/g?y"},
+		{ref: "#s", want: "http://a/b/c/d;p?q#s"},
+		{ref: "g#s", want: "http://a/b/c/g#s"},
+		{ref: "g?y#s", want: "http://a/b/c/g?y#s"},
+		{ref: ";x", want: "http://a/b/c/;x"},
+		{ref: "g;x", want: "http://a/b/c/g;x"},
+		{ref: "g;x?y#s", want: "http://a/b/c/g;x?y#s"},
+		{ref: "", want: "http://a/b/c/d;p?q"},
+		{ref: ".", want: "http://a/b/c/"},
+		{ref: "./", want: "http://a/b/c/"},
+		{ref: "..", want: "http://a/b/"},
+		{ref: "../", want: "http://a/b/"},
+		{ref: "../g", want: "http://a/b/g"},
+		{ref: "../..", want: "http://a/"},
+		{ref: "../../", want: "http://a/"},
+		{ref: "../../g", want: "http://a/g"},
+
+		// Abnormal examples as per 5.4.2
+		{ref: "../../../g", want: "http://a/g"},
+		{ref: "../../../../g", want: "http://a/g"},
+		{ref: "/./g", want: "http://a/g"},
+		{ref: "/../g", want: "http://a/g"},
+		{ref: "g.", want: "http://a/b/c/g."},
+		{ref: ".g", want: "http://a/b/c/.g"},
+		{ref: "g..", want: "http://a/b/c/g.."},
+		{ref: "..g", want: "http://a/b/c/..g"},
+
+		{ref: "./../g", want: "http://a/b/g"},
+		{ref: "./g/.", want: "http://a/b/c/g/"},
+		{ref: "g/./h", want: "http://a/b/c/g/h"},
+		{ref: "g/../h", want: "http://a/b/c/h"},
+		{ref: "g;x=1/./y", want: "http://a/b/c/g;x=1/y"},
+		{ref: "g;x=1/../y", want: "http://a/b/c/y"},
+
+		{ref: "g?y/./x", want: "http://a/b/c/g?y/./x"},
+		{ref: "g?y/../x", want: "http://a/b/c/g?y/../x"},
+		{ref: "g#s/./x", want: "http://a/b/c/g#s/./x"},
+		{ref: "g#s/../x", want: "http://a/b/c/g#s/../x"},
+
+		{ref: "http:g", want: "http:g"},
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.ref, func(t *testing.T) {
+			t.Parallel()
+			ref, err := iri.Parse(tc.ref)
+			if err != nil {
+				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+			}
+			got := base.ResolveReference(ref).String()
+			if got != tc.want {
+				t.Errorf("ResolveReference(%s, %s)\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
 			}
 		})
 	}
