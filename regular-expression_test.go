@@ -1,4 +1,4 @@
-package iri
+package iri //nolint: testpackage
 
 import (
 	"fmt"

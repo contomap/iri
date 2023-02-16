@@ -1,0 +1,58 @@
+run:
+  deadline: 5m
+
+linters:
+  disable-all: true
+
+  enable:
+    - asciicheck
+    - bodyclose
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errcheck
+    - errorlint
+    - exportloopref
+    - forbidigo
+    - goconst
+    - gocritic
+    - godot
+    - godox
+    - gofmt
+    - goheader
+    - goimports
+    - gomoddirectives
+    - gomodguard
+    - goprintffuncname
+    - gosimple
+    - govet
+    - importas
+    - ineffassign
+    - lll
+    - makezero
+    - misspell
+    - nilerr
+    - noctx
+    - nolintlint
+    - predeclared
+    - promlinter
+    - revive
+    - staticcheck
+    - tagliatelle
+    - testpackage
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unused
+    - whitespace
+
+issues:
+  exclude-use-default: false # disable filtering of defaults for better zero-issue policy
+  max-per-linter: 0 # disable limit; report all issues of a linter
+  max-same-issues: 0 # disable limit; report all issues of the same issue
+
+linters-settings:
+  lll:
+    line-length: 160

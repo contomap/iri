@@ -60,12 +60,13 @@ func resolveReference(base, ref IRI) IRI {
 // them to base, per RFC 3986.
 func resolvePath(base, ref string) string {
 	var full string
-	if ref == "" {
+	switch {
+	case ref == "":
 		full = base
-	} else if ref[0] != '/' {
+	case ref[0] != '/':
 		i := strings.LastIndex(base, "/")
 		full = base[:i+1] + ref
-	} else {
+	default:
 		full = ref
 	}
 	if full == "" {
