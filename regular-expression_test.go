@@ -12,7 +12,7 @@ func TestMustCompileNamedPanics(t *testing.T) {
 		if p := recover(); p != nil {
 			got := fmt.Sprintf("%v", p)
 			if !strings.HasPrefix(got, "failed to compile regexp example:") {
-				t.Errorf("expected specific panic text. got: '%s'", got)
+				t.Errorf("expected specific panic text. got: %q", got)
 			}
 		} else {
 			t.Errorf("expected panic")

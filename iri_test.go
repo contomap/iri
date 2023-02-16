@@ -111,7 +111,7 @@ func TestParse(t *testing.T) {
 				t.Errorf("got err %v, wantErr = %v", err, tc.wantErr)
 			}
 			if got.String() != tc.want {
-				t.Errorf("Parse(%q) got %s, want %s", tc.in, got, tc.want)
+				t.Errorf("Parse(%q) got %q, want %q", tc.in, got, tc.want)
 			}
 		})
 	}
@@ -139,7 +139,7 @@ func TestParseRFC3986Samples(t *testing.T) {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
 			if got.String() != tc.value {
-				t.Errorf("Parse().String() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
+				t.Errorf("Parse().String() roundtrip failed:\n  input:  %q\n  output: %q\n  parts:\n%#v", tc.value, got, got)
 			}
 		})
 	}
@@ -187,7 +187,7 @@ func TestString(t *testing.T) {
 				t.Errorf("Parse() return error: got: %v", err)
 			}
 			if got.String() != tc.value {
-				t.Errorf("Parse().String() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
+				t.Errorf("Parse().String() roundtrip failed:\n  input:  %q\n  output: %q\n  parts:\n%#v", tc.value, got, got)
 			}
 		})
 	}
@@ -215,11 +215,11 @@ func TestStringFromCreatedObject(t *testing.T) {
 			t.Parallel()
 			got := tc.in.String()
 			if got != tc.want {
-				t.Errorf("String() mismatch: got: '%s', want: '%s'", got, tc.want)
+				t.Errorf("String() mismatch: got: %q, want: %q", got, tc.want)
 			}
 			_, err := iri.Parse(got)
 			if err != nil {
-				t.Errorf("Parse(got) returned error: got: '%s', err: %v", got, err)
+				t.Errorf("Parse(got) returned error: got: %q, err: %v", got, err)
 			}
 		})
 	}
@@ -283,10 +283,10 @@ func TestNormalizePercentEncoding(t *testing.T) {
 			t.Parallel()
 			in, err := iri.Parse(tc.in)
 			if err != nil {
-				t.Errorf("IRI %s is not a valid IRI: %v", tc.in, err)
+				t.Errorf("IRI %q is not a valid IRI: %v", tc.in, err)
 			}
 			if got, _ := iri.NormalizePercentEncoding(in); got.String() != tc.want {
-				t.Errorf("NormalizePercentEncoding(%q) = \n  %s, want\n  %s", tc.in, got, tc.want)
+				t.Errorf("NormalizePercentEncoding(%q) = \n  %q, want\n  %q", tc.in, got, tc.want)
 			}
 		})
 	}
@@ -404,15 +404,15 @@ func TestResolveReferenceManualSamples(t *testing.T) {
 			t.Parallel()
 			base, err := iri.Parse(tc.base)
 			if err != nil {
-				t.Errorf("base IRI %s is not a valid IRI: %v", tc.base, err)
+				t.Errorf("base IRI %q is not a valid IRI: %v", tc.base, err)
 			}
 			ref, err := iri.Parse(tc.ref)
 			if err != nil {
-				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+				t.Errorf("ref IRI %q is not a valid IRI: %v", tc.ref, err)
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", tc.base, tc.ref, got, tc.want)
+				t.Errorf("ResolveReference(%q, %q)\n  got %q\n want %q", tc.base, tc.ref, got, tc.want)
 			}
 		})
 	}
@@ -482,11 +482,11 @@ func TestResolveReferenceRFC3986Samples(t *testing.T) {
 			t.Parallel()
 			ref, err := iri.Parse(tc.ref)
 			if err != nil {
-				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+				t.Errorf("ref IRI %q is not a valid IRI: %v", tc.ref, err)
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
+				t.Errorf("ResolveReference(%q, %q)\n  got %q\n want %q", base.String(), tc.ref, got, tc.want)
 			}
 		})
 	}
@@ -557,11 +557,11 @@ func TestResolveReferenceRFC1808Samples(t *testing.T) {
 			t.Parallel()
 			ref, err := iri.Parse(tc.ref)
 			if err != nil {
-				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+				t.Errorf("ref IRI %q is not a valid IRI: %v", tc.ref, err)
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
+				t.Errorf("ResolveReference(%q, %q)\n  got %q\n want %q", base.String(), tc.ref, got, tc.want)
 			}
 		})
 	}
@@ -648,7 +648,8 @@ type verifyFunc func(testing.TB, iri.IRI)
 func hasScheme(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
 		if got.Scheme != expected {
-			t.Errorf("invalid scheme. want: '%v'", expected)
+
+			t.Errorf("invalid scheme. want: %q", expected)
 		}
 	}
 }
@@ -656,7 +657,7 @@ func hasScheme(expected string) verifyFunc {
 func hasAuthority(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
 		if got.Authority != expected {
-			t.Errorf("invalid host. want: '%v'", expected)
+			t.Errorf("invalid host. want: %q", expected)
 		}
 	}
 }
@@ -664,7 +665,7 @@ func hasAuthority(expected string) verifyFunc {
 func hasPath(expected string) verifyFunc {
 	return func(t testing.TB, got iri.IRI) {
 		if got.Path != expected {
-			t.Errorf("invalid path. want: '%v'", expected)
+			t.Errorf("invalid path. want: %q", expected)
 		}
 	}
 }
