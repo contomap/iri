@@ -31,7 +31,7 @@ func TestRegExps(t *testing.T) {
 		{
 			name: "space is not a valid iri character",
 			re:   iunreservedRE,
-			in:   ` `,
+			in:   " ",
 			want: false,
 		},
 		{

@@ -15,60 +15,60 @@ func TestParse(t *testing.T) {
 	}{
 		{
 			name: "prop1",
-			in:   `https://example.com/sub/path/testing#frag1`,
+			in:   "https://example.com/sub/path/testing#frag1",
 			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "https://example.org/#André",
-			in:   `https://example.org/#André`,
-			want: `https://example.org/#André`,
+			in:   "https://example.org/#André",
+			want: "https://example.org/#André",
 		},
 		{
 			name: "valid urn:uuid",
-			in:   `urn:uuid:6c689097-8097-4421-9def-05e835f2dbb8`,
-			want: `urn:uuid:6c689097-8097-4421-9def-05e835f2dbb8`,
+			in:   "urn:uuid:6c689097-8097-4421-9def-05e835f2dbb8",
+			want: "urn:uuid:6c689097-8097-4421-9def-05e835f2dbb8",
 		},
 		{
 			name: "valid urn:uuid:",
-			in:   `urn:uuid:`,
-			want: `urn:uuid:`,
+			in:   "urn:uuid:",
+			want: "urn:uuid:",
 		},
 		{
 			name: "valid a:b:c:",
-			in:   `a:b:c:`,
-			want: `a:b:c:`,
+			in:   "a:b:c:",
+			want: "a:b:c:",
 		},
 		{
 			name:    "https://example.org/#André then some whitespace",
 			in:      "https://example.org/#André then some whitespace",
-			want:    ``,
+			want:    "",
 			wantErr: true,
 		},
 		{
 			name: "query with iprivate character",
 			in:   "https://example.org?\ue000",
-			want: `https://example.org?`,
+			want: "https://example.org?",
 		},
 		{
 			// This is an "intentional" parse error; It is to showcase that examples from RFC 3987 with XML notation
 			// must not be taken literally. As per chapter 1.4 (page 5), these are meant to escape the "only US-ASCII"
 			// RFC text. This particular example comes from page 12.
 			name:    "XML notation from RFC to represent non-ascii characters",
-			in:      `https://r&#xE9;sum&#xE9;.example.org`,
+			in:      "https://r&#xE9;sum&#xE9;.example.org",
 			want:    "",
 			wantErr: true,
 		},
 		{
 			name:    "invalid utf-8 B5",
-			in:      `https://é.example.org/dog%20house/%B5`,
-			want:    ``,
+			in:      "https://é.example.org/dog%20house/%B5",
+			want:    "",
 			wantErr: true,
 		},
 		{
 			// 181 is not a valid utf-8 octal. Check out https://www.utf8-chartable.de/.
 			name:    "invalid utf-8 B5",
-			in:      `https://é.example.org/dog%20house/%20%b5`,
-			want:    ``,
+			in:      "https://é.example.org/dog%20house/%20%b5",
+			want:    "",
 			wantErr: true,
 		},
 	}
@@ -141,7 +141,7 @@ func TestString(t *testing.T) {
 		{"https://example.com:22/path/to?q=a#b"},
 		{"https://example.com:22/path/to?q=a#"},
 		{"https://#"},
-		{`http://example/q?abc=1&def=2`},
+		{"http://example/q?abc=1&def=2"},
 
 		{"scheme:opaque?query#fragment"},
 		{"scheme://userinfo@host/path?query#fragment"},
@@ -203,48 +203,48 @@ func TestNormalizePercentEncoding(t *testing.T) {
 	}{
 		{
 			name: "a",
-			in:   `https://example.com/sub/path/testing#frag1`,
+			in:   "https://example.com/sub/path/testing#frag1",
 			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "b",
-			in:   `https://example.com/sub/path/testing#frag1`,
+			in:   "https://example.com/sub/path/testing#frag1",
 			want: "https://example.com/sub/path/testing#frag1",
 		},
 		{
 			name: "non ascii é",
-			in:   `https://é.example.org`,
-			want: `https://é.example.org`,
+			in:   "https://é.example.org",
+			want: "https://é.example.org",
 		},
 		{
 			name: "encoded userinfo",
-			in:   `https://%c2%B5@example.org`,
-			want: `https://µ@example.org`,
+			in:   "https://%c2%B5@example.org",
+			want: "https://µ@example.org",
 		},
 		{
 			name: "encoded host",
-			in:   `https://%c2%B5.example.org`,
-			want: `https://µ.example.org`,
+			in:   "https://%c2%B5.example.org",
+			want: "https://µ.example.org",
 		},
 		{
 			name: "Preserve percent encoding when it is necessary",
-			in:   `https://é.example.org/dog%20house/%c2%B5`,
-			want: `https://é.example.org/dog%20house/µ`,
+			in:   "https://é.example.org/dog%20house/%c2%B5",
+			want: "https://é.example.org/dog%20house/µ",
 		},
 		{
 			name: "encoded query",
-			in:   `https://example.org?q=%c2%B5`,
-			want: `https://example.org?q=µ`,
+			in:   "https://example.org?q=%c2%B5",
+			want: "https://example.org?q=µ",
 		},
 		{
 			name: "encoded fragment",
-			in:   `https://example.org#%c2%B5`,
-			want: `https://example.org#µ`,
+			in:   "https://example.org#%c2%B5",
+			want: "https://example.org#µ",
 		},
 		{
 			name: "Example from https://github.com/google/xtoproto/issues/23",
 			in:   "https://wiktionary.org/wiki/%E1%BF%AC%CF%8C%CE%B4%CE%BF%CF%82",
-			want: `https://wiktionary.org/wiki/Ῥόδος`,
+			want: "https://wiktionary.org/wiki/Ῥόδος",
 		},
 	}
 	for _, tc := range tt {
