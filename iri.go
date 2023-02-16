@@ -29,10 +29,7 @@ type IRI struct {
 // maintained.
 // If any of these steps produce an error, this function returns an error and an empty IRI.
 func Parse(s string) (IRI, error) {
-	match := uriRE.FindStringSubmatch(s)
-	if len(match) == 0 {
-		return IRI{}, fmt.Errorf("%q is not a valid IRI - does not match regexp %s", s, uriRE)
-	}
+	match := uriRE.FindStringSubmatch(s) // It is not possible to not match the regular expression; If it is, add a test
 	scheme := match[uriRESchemeGroup]
 	authority := match[uriREAuthorityGroup]
 	path := match[uriREPathGroup]
