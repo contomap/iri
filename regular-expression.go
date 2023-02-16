@@ -68,7 +68,7 @@ const (
 	// non-zero-length segment without any colon ":"
 	isegmentnznc = `(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|` + `[@])`
 
-	iquery = `(?:(?:` + ipchar + `|` + iprivate + `|` + `\/\?` + `)*)`
+	iquery = `(?:(?:` + ipchar + `|` + iprivate + `|` + `[\/\?]` + `)*)`
 
 	ifragment = `(?:(?:` + ipchar + `|` + `[\/\?]` + `)*)`
 
