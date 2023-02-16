@@ -87,6 +87,34 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestParseRFC3986Samples(t *testing.T) {
+	tt := []struct {
+		value string
+	}{
+		{"ftp://ftp.is.co.za/rfc/rfc1808.txt"},
+		{"https://www.ietf.org/rfc/rfc2396.txt"},
+		{"ldap://[2001:db8::7]/c=GB?objectClass?one"},
+		{"mailto:John.Doe@example.com"},
+		{"news:comp.infosystems.www.servers.unix"},
+		{"tel:+1-816-555-1212"},
+		{"telnet://192.0.2.16:80/"},
+		{"urn:oasis:names:specification:docbook:dtd:xml:4.1.2"},
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.value, func(t *testing.T) {
+			t.Parallel()
+			got, err := iri.Parse(tc.value)
+			if err != nil {
+				t.Errorf("Parse() return error: got: %v", err)
+			}
+			if got.String() != tc.value {
+				t.Errorf("Parse().String() roundtrip failed:\n  input:  %s\n  output: %s\n  parts:\n%#v", tc.value, got, got)
+			}
+		})
+	}
+}
+
 func TestString(t *testing.T) {
 	tt := []struct {
 		value string
@@ -234,7 +262,8 @@ func TestNormalizePercentEncoding(t *testing.T) {
 	}
 }
 
-func TestResolveReference(t *testing.T) {
+func TestResolveReferenceManualSamples(t *testing.T) {
+	// Many test cases here duplicate the samples from the RFCs, yet they are kept here as a manual test basis.
 	tt := []struct {
 		name      string
 		base, ref string
@@ -307,17 +336,11 @@ func TestResolveReference(t *testing.T) {
 			want: "https://example.com/sub/path/testing#",
 		},
 		{
-			name: "empty ref",
+			name: "empty ref as per RFC 3986 algorithm in 5.2.2.",
 			base: "https://example.com/sub/path/testing#frag1",
 			ref:  "",
-			want: "https://example.com/sub/path/testing#frag1",
+			want: "https://example.com/sub/path/testing",
 		},
-		// {
-		// 	name: "An empty same document reference \"\" resolves against the URI part of the base URI; any fragment part is ignored. See Uniform Resource Identifiers (URI) [RFC3986]",
-		// 	base: "http://user@example.com/path#x-frag",
-		// 	ref:  "",
-		// 	want: `http://user@example.com/path`,
-		// },
 		{
 			name: "empty to empty",
 			base: "",
@@ -339,7 +362,7 @@ func TestResolveReference(t *testing.T) {
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference(%s, %s)\n  got '%s'\n want '%s'", tc.base, tc.ref, got, tc.want)
+				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", tc.base, tc.ref, got, tc.want)
 			}
 		})
 	}
@@ -413,7 +436,82 @@ func TestResolveReferenceRFC3986Samples(t *testing.T) {
 			}
 			got := base.ResolveReference(ref).String()
 			if got != tc.want {
-				t.Errorf("ResolveReference(%s, %s)\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
+				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestResolveReferenceRFC1808Samples(t *testing.T) {
+	// Although many samples of RFC 1808 are similar to that of RFC 3986,
+	// those of RFC 1808 do use a base that contains a fragment.
+	// However, RFC 3986 also obsoletes RFC 1808, so some samples are not valid.
+	base, baseErr := iri.Parse("http://a/b/c/d;p?q#f")
+	if baseErr != nil {
+		t.Fatalf("Base IRI is not correct: %v", baseErr)
+	}
+	tt := []struct {
+		ref  string
+		want string
+	}{
+		// Normal examples as per 5.1
+		{ref: "g:h", want: "g:h"},
+		{ref: "g", want: "http://a/b/c/g"},
+		{ref: "./g", want: "http://a/b/c/g"},
+		{ref: "g/", want: "http://a/b/c/g/"},
+		{ref: "/g", want: "http://a/g"},
+		{ref: "//g", want: "http://g"},
+		{ref: "?y", want: "http://a/b/c/d;p?y"},
+		{ref: "g?y", want: "http://a/b/c/g?y"},
+		{ref: "g?y/./x", want: "http://a/b/c/g?y/./x"},
+		{ref: "#s", want: "http://a/b/c/d;p?q#s"},
+		{ref: "g#s", want: "http://a/b/c/g#s"},
+		{ref: "g#s/./x", want: "http://a/b/c/g#s/./x"},
+		{ref: "g?y#s", want: "http://a/b/c/g?y#s"},
+		{ref: ";x", want: "http://a/b/c/;x"},
+		{ref: "g;x", want: "http://a/b/c/g;x"},
+		{ref: "g;x?y#s", want: "http://a/b/c/g;x?y#s"},
+		{ref: ".", want: "http://a/b/c/"},
+		{ref: "./", want: "http://a/b/c/"},
+		{ref: "..", want: "http://a/b/"},
+		{ref: "../", want: "http://a/b/"},
+		{ref: "../g", want: "http://a/b/g"},
+		{ref: "../..", want: "http://a/"},
+		{ref: "../../", want: "http://a/"},
+		{ref: "../../g", want: "http://a/g"},
+
+		// Abnormal examples as per 5.2
+		// {ref: "", want: "http://a/b/c/d;p?q#f"}, // superseded by RFC 3986, algorithm in 5.2.2.
+		{ref: "", want: "http://a/b/c/d;p?q"}, // the current behaviour as per RFC 3986, algorithm in 5.2.2.
+
+		// {ref: "../../../g", want: "http://a/../g"}, // superseded by RFC 3986 as per examples
+		// {ref: "../../../../g", want: "http://a/../../g"}, // superseded by RFC 3986 as per examples
+		// {ref: "/./g", want: "http://a/./g"}, // superseded by RFC 3986 as per examples
+		// {ref: "/../g", want: "http://a/../g"}, // superseded by RFC 3986 as per examples
+		{ref: "g.", want: "http://a/b/c/g."},
+		{ref: ".g", want: "http://a/b/c/.g"},
+		{ref: "g..", want: "http://a/b/c/g.."},
+		{ref: "..g", want: "http://a/b/c/..g"},
+
+		{ref: "./../g", want: "http://a/b/g"},
+		{ref: "./g/.", want: "http://a/b/c/g/"},
+		{ref: "g/./h", want: "http://a/b/c/g/h"},
+		{ref: "g/../h", want: "http://a/b/c/h"},
+
+		{ref: "http:g", want: "http:g"},
+		{ref: "http:", want: "http:"},
+	}
+	for _, tc := range tt {
+		tc := tc
+		t.Run(tc.ref, func(t *testing.T) {
+			t.Parallel()
+			ref, err := iri.Parse(tc.ref)
+			if err != nil {
+				t.Errorf("ref IRI %s is not a valid IRI: %v", tc.ref, err)
+			}
+			got := base.ResolveReference(ref).String()
+			if got != tc.want {
+				t.Errorf("ResolveReference('%s', '%s')\n  got '%s'\n want '%s'", base.String(), tc.ref, got, tc.want)
 			}
 		})
 	}

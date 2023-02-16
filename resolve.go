@@ -53,11 +53,6 @@ func resolveReference(base, ref IRI) IRI {
 	}
 	result.ForceQuery = base.ForceQuery
 	result.Query = base.Query
-	if ref.hasFragment() {
-		return result
-	}
-	result.ForceFragment = base.ForceFragment
-	result.Fragment = base.Fragment
 	return result
 }
 
