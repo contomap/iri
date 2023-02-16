@@ -41,15 +41,11 @@ const (
 
 	scheme = "(?:" + alphaChars + "(?:" + alphaChars + "|" + digitChars + `|[\+\-\.])*)`
 
-	iauthority                    = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
-	iauthorityCapture             = `(?:((` + iuserinfo + ")@)?((?:" + ihost + `)(?:\:(?:` + port + `))?))`
-	iauthorityUserInfoWithAtGroup = 1
-	iauthorityUserInfoGroup       = 2
-	iauthorityHostPortGroup       = 3
-	iuserinfo                     = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
-	port                          = `(?:\d*)`
-	ihost                         = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
-	iregName                      = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)"
+	iauthority = `(?:` + iuserinfo + "@)?" + ihost + `(?:\:` + port + `)?`
+	iuserinfo  = `(?:(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|\:)*)`
+	port       = `(?:\d*)`
+	ihost      = `(?:` + ipLiteral + `|` + ipV4Address + `|` + iregName + `)`
+	iregName   = "(?:(?:" + iunreserved + "|" + pctEncoded + "|" + subDelims + ")*)"
 
 	ipath = `(?:` + ipathabempty + // begins with "/" or is empty
 		`|` + ipathabsolute + // begins with "/" but not "//"
@@ -65,7 +61,7 @@ const (
 
 	isegment   = `(?:` + ipchar + `*)`
 	isegmentnz = `(?:` + ipchar + `+)`
-	// non-zero-length segment without any colon ":"
+	// Describes a non-zero-length segment without any colon ":".
 	isegmentnznc = `(?:` + iunreserved + `|` + pctEncoded + `|` + subDelims + `|` + `[@])`
 
 	iquery = `(?:(?:` + ipchar + `|` + iprivate + `|` + `[\/\?]` + `)*)`
@@ -111,12 +107,11 @@ const (
 )
 
 var (
-	schemeRE            = mustCompileNamed("schemeRE", "^"+scheme+"$")
-	iauthorityRE        = mustCompileNamed("iauthorityRE", "^"+iauthority+"$")
-	iauthorityCaptureRE = mustCompileNamed("iauthorityCaptureRE", "^"+iauthorityCapture+"$")
-	ipathRE             = mustCompileNamed("ipath", "^"+ipath+"$")
-	iqueryRE            = mustCompileNamed("iquery", "^"+iquery+"$")
-	ifragmentRE         = mustCompileNamed("ifragment", "^"+ifragment+"$")
+	schemeRE     = mustCompileNamed("schemeRE", "^"+scheme+"$")
+	iauthorityRE = mustCompileNamed("iauthorityRE", "^"+iauthority+"$")
+	ipathRE      = mustCompileNamed("ipath", "^"+ipath+"$")
+	iqueryRE     = mustCompileNamed("iquery", "^"+iquery+"$")
+	ifragmentRE  = mustCompileNamed("ifragment", "^"+ifragment+"$")
 
 	pctEncodedCharOneOrMore = mustCompileNamed("pctEncodedOneOrMore", pctEncodedOneOrMore)
 	iunreservedRE           = mustCompileNamed("iunreservedRE", "^"+iunreserved+"$")

@@ -107,6 +107,7 @@ func TestParse(t *testing.T) {
 			wantErr: true,
 		},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -135,6 +136,7 @@ func TestParseRFC3986Samples(t *testing.T) {
 		{"telnet://192.0.2.16:80/"},
 		{"urn:oasis:names:specification:docbook:dtd:xml:4.1.2"},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.value, func(t *testing.T) {
@@ -183,6 +185,7 @@ func TestString(t *testing.T) {
 
 		{"https://@example.com"},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.value, func(t *testing.T) {
@@ -213,7 +216,7 @@ func TestStringFromCreatedObject(t *testing.T) {
 		{in: iri.IRI{ForceQuery: true, Query: "q=forced"}, want: "?q=forced"},
 		{in: iri.IRI{ForceQuery: false, Query: "q=lone"}, want: "?q=lone"},
 	}
-
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.want, func(t *testing.T) {
@@ -282,6 +285,7 @@ func TestNormalizePercentEncoding(t *testing.T) {
 			want: "https://wiktionary.org/wiki/Ῥόδος",
 		},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -306,6 +310,7 @@ func TestNormalizePercentEncodingErrors(t *testing.T) {
 		{value: iri.IRI{Query: "%FF"}},
 		{value: iri.IRI{Fragment: "%FF"}},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.value.String(), func(t *testing.T) {
@@ -403,6 +408,7 @@ func TestResolveReferenceManualSamples(t *testing.T) {
 			want: "",
 		},
 	}
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
@@ -424,6 +430,7 @@ func TestResolveReferenceManualSamples(t *testing.T) {
 }
 
 func TestResolveReferenceRFC3986Samples(t *testing.T) {
+	t.Parallel()
 	base, baseErr := iri.Parse("http://a/b/c/d;p?q")
 	if baseErr != nil {
 		t.Fatalf("Base IRI is not correct: %v", baseErr)
@@ -498,6 +505,7 @@ func TestResolveReferenceRFC3986Samples(t *testing.T) {
 }
 
 func TestResolveReferenceRFC1808Samples(t *testing.T) {
+	t.Parallel()
 	// Although many samples of RFC 1808 are similar to that of RFC 3986,
 	// those of RFC 1808 do use a base that contains a fragment.
 	// However, RFC 3986 also obsoletes RFC 1808, so some samples are not valid.
@@ -631,7 +639,7 @@ func TestProperties(t *testing.T) {
 		{in: "email:user@example.com", verify: allOf(hasScheme("email"), hasPath("user@example.com"))},
 		{in: "/", verify: hasPath("/")},
 	}
-
+	t.Parallel()
 	for _, tc := range tt {
 		tc := tc
 		t.Run(tc.in, func(t *testing.T) {
@@ -651,42 +659,46 @@ func TestProperties(t *testing.T) {
 type verifyFunc func(testing.TB, iri.IRI)
 
 func hasScheme(expected string) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
+	return func(tb testing.TB, got iri.IRI) {
+		tb.Helper()
 		if got.Scheme != expected {
-
-			t.Errorf("invalid scheme. want: %q", expected)
+			tb.Errorf("invalid scheme. want: %q", expected)
 		}
 	}
 }
 
 func hasAuthority(expected string) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
+	return func(tb testing.TB, got iri.IRI) {
+		tb.Helper()
 		if got.Authority != expected {
-			t.Errorf("invalid host. want: %q", expected)
+			tb.Errorf("invalid host. want: %q", expected)
 		}
 	}
 }
 
 func hasPath(expected string) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
+	return func(tb testing.TB, got iri.IRI) {
+		tb.Helper()
 		if got.Path != expected {
-			t.Errorf("invalid path. want: %q", expected)
+			tb.Errorf("invalid path. want: %q", expected)
 		}
 	}
 }
 
 func is(expected iri.IRI) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
+	return func(tb testing.TB, got iri.IRI) {
+		tb.Helper()
 		if got != expected {
-			t.Errorf("is not matching. want: %#v", expected)
+			tb.Errorf("is not matching. want: %#v", expected)
 		}
 	}
 }
 
 func allOf(list ...verifyFunc) verifyFunc {
-	return func(t testing.TB, got iri.IRI) {
+	return func(tb testing.TB, got iri.IRI) {
+		tb.Helper()
 		for _, entry := range list {
-			entry(t, got)
+			entry(tb, got)
 		}
 	}
 }
