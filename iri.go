@@ -9,6 +9,9 @@ import (
 // An IRI (Internationalized Resource Identifier) is a Unicode string [UNICODE]
 // that conforms to the syntax defined in RFC 3987.
 //
+// This type is not a "drop-in" replacement for "net/uri.URI". See package
+// comments for details.
+//
 // See https://www.ietf.org/rfc/rfc3987.html
 type IRI struct {
 	Scheme         string
@@ -53,12 +56,12 @@ func Parse(s string) (IRI, error) {
 
 	parsed := IRI{
 		Scheme:         scheme,
-		ForceAuthority: len(match[uriREAuthorityWithSlashSlashGroup]) != 0,
+		ForceAuthority: len(match[uriREAuthorityWithSlashSlashGroup]) != 0 && (len(authority) == 0),
 		Authority:      authority,
 		Path:           path,
-		ForceQuery:     match[uriREQueryWithMarkGroup] != "",
+		ForceQuery:     match[uriREQueryWithMarkGroup] != "" && (len(query) == 0),
 		Query:          query,
-		ForceFragment:  match[uriREFragmentWithHashGroup] != "",
+		ForceFragment:  match[uriREFragmentWithHashGroup] != "" && (len(fragment) == 0),
 		Fragment:       fragment,
 	}
 
@@ -100,7 +103,7 @@ func (iri IRI) hasQuery() bool     { return iri.ForceQuery || iri.Query != "" }
 func (iri IRI) hasFragment() bool  { return iri.ForceFragment || iri.Fragment != "" }
 
 // ResolveReference resolves an IRI reference to an absolute IRI from an absolute
-// base IRI u, per RFC 3986 Section 5.2. The IRI reference may be relative or absolute.
+// base IRI, per RFC 3986 Section 5.2. The IRI reference may be relative or absolute.
 func (iri IRI) ResolveReference(other IRI) IRI {
 	return resolveReference(iri, other)
 }
