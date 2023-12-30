@@ -5,6 +5,11 @@
 [![GoReportCard](https://goreportcard.com/badge/github.com/contomap/iri)](https://goreportcard.com/report/github.com/contomap/iri)
 [![License](https://img.shields.io/github/license/contomap/iri.svg)](https://github.com/contomap/iri/blob/main/LICENSE)
 
+**This repository is archived. Ultimately, there was no need for this library.
+Furthermore, the realization is also that "Resource Identifier" could be an "unlimited"
+data structure, and separate serialization rules then govern whether it becomes an IRI, URI, URL, or whatever flavor (RFC) wanted.
+This would be a further (incompatible) rework of the API.**
+
 This library provides facilities for working with Internationalized Resource
 Identifiers (IRI) as specified in RFC 3987.
 
